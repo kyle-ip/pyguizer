@@ -1,12 +1,26 @@
 """FastAPI Application for PyGUIzer"""
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
+import asyncio
+import uuid
+import time
+from enum import Enum
 from pyguizer.core.introspection import introspect_function
 from pyguizer.core.widget import generate_wso
 from pyguizer.core.layout import process_layout
+
+
+class TaskStatus(str, Enum):
+    """Task status enumeration."""
+    PENDING = "pending"
+    RUNNING = "running"
+    STREAMING = "streaming"
+    SUCCESS = "success"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
 
 
 class RunRequest(BaseModel):
@@ -16,8 +30,45 @@ class RunRequest(BaseModel):
 
 class RunResponse(BaseModel):
     """Response model for function execution."""
-    result: Any = Field(...)
-    execution_time: float = Field(...)
+    task_id: str = Field(...)
+    status: TaskStatus = Field(...)
+
+
+class TaskInfo(BaseModel):
+    """Task information model."""
+    task_id: str = Field(...)
+    status: TaskStatus = Field(...)
+    created_at: float = Field(...)
+    started_at: Optional[float] = Field(None)
+    completed_at: Optional[float] = Field(None)
+    result: Optional[Any] = Field(None)
+    error: Optional[str] = Field(None)
+    progress: Optional[float] = Field(None)
+    message: Optional[str] = Field(None)
+
+
+class PresetCreate(BaseModel):
+    """Request model for creating a preset."""
+    name: str = Field(..., description="Preset name")
+    description: Optional[str] = Field(None, description="Preset description")
+    values: Dict[str, Any] = Field(..., description="Preset values")
+
+
+class PresetUpdate(BaseModel):
+    """Request model for updating a preset."""
+    name: Optional[str] = Field(None, description="Preset name")
+    description: Optional[str] = Field(None, description="Preset description")
+    values: Optional[Dict[str, Any]] = Field(None, description="Preset values")
+
+
+class PresetResponse(BaseModel):
+    """Response model for preset operations."""
+    id: str = Field(...)
+    name: str = Field(...)
+    description: Optional[str] = Field(None)
+    values: Dict[str, Any] = Field(...)
+    created_at: float = Field(...)
+    updated_at: Optional[float] = Field(None)
 
 
 class AppSpec(BaseModel):
@@ -25,6 +76,103 @@ class AppSpec(BaseModel):
     name: str = Field(...)
     description: str = Field(...) 
     layout: Dict[str, Any] = Field(...)
+
+
+class ConnectionManager:
+    """WebSocket connection manager."""
+    
+    def __init__(self):
+        # Maps task_id to set of WebSocket connections
+        self.active_connections: Dict[str, Set[WebSocket]] = {}
+    
+    async def connect(self, websocket: WebSocket, task_id: str):
+        """Accept a WebSocket connection for a specific task."""
+        await websocket.accept()
+        if task_id not in self.active_connections:
+            self.active_connections[task_id] = set()
+        self.active_connections[task_id].add(websocket)
+    
+    def disconnect(self, websocket: WebSocket, task_id: str):
+        """Disconnect a WebSocket connection from a specific task."""
+        if task_id in self.active_connections:
+            self.active_connections[task_id].discard(websocket)
+            if not self.active_connections[task_id]:
+                del self.active_connections[task_id]
+    
+    async def send_personal_message(self, message: Dict[str, Any], websocket: WebSocket):
+        """Send a message to a specific WebSocket connection."""
+        await websocket.send_json(message)
+    
+    async def broadcast(self, message: Dict[str, Any], task_id: str):
+        """Broadcast a message to all connections for a specific task."""
+        if task_id in self.active_connections:
+            for connection in self.active_connections[task_id]:
+                await connection.send_json(message)
+
+
+class TaskManager:
+    """Task manager for handling asynchronous function execution."""
+    
+    def __init__(self):
+        self.tasks: Dict[str, Dict[str, Any]] = {}
+        self.manager = ConnectionManager()
+    
+    def create_task(self) -> str:
+        """Create a new task and return its ID."""
+        task_id = str(uuid.uuid4())
+        self.tasks[task_id] = {
+            "status": TaskStatus.PENDING,
+            "created_at": time.time(),
+            "started_at": None,
+            "completed_at": None,
+            "result": None,
+            "error": None,
+            "progress": None,
+            "message": None,
+            "cancelled": False
+        }
+        return task_id
+    
+    def get_task(self, task_id: str) -> Dict[str, Any]:
+        """Get task information by ID."""
+        if task_id not in self.tasks:
+            raise HTTPException(status_code=404, detail="Task not found")
+        return self.tasks[task_id]
+    
+    def update_task(self, task_id: str, **kwargs):
+        """Update task information."""
+        task = self.get_task(task_id)
+        task.update(kwargs)
+        # Broadcast updates to connected WebSockets
+        asyncio.create_task(
+            self.manager.broadcast(
+                {
+                    "type": "task_update",
+                    "task_id": task_id,
+                    "task": task
+                },
+                task_id
+            )
+        )
+    
+    def cancel_task(self, task_id: str):
+        """Cancel a running task."""
+        task = self.get_task(task_id)
+        task["cancelled"] = True
+        task["status"] = TaskStatus.CANCELLED
+        task["completed_at"] = time.time()
+        task["message"] = "Task cancelled by user"
+        # Broadcast cancellation to connected WebSockets
+        asyncio.create_task(
+            self.manager.broadcast(
+                {
+                    "type": "task_update",
+                    "task_id": task_id,
+                    "task": task
+                },
+                task_id
+            )
+        )
 
 
 class PyGUIzerApp:
@@ -42,6 +190,9 @@ class PyGUIzerApp:
         
         # Process layout
         self.ui_layout = process_layout(self.wsos, self.layout)
+        
+        # Preset management
+        self.presets = []
     
     def get_app_spec(self) -> Dict[str, Any]:
         """Get the application specification."""
@@ -57,12 +208,104 @@ class PyGUIzerApp:
             return self.func(**inputs)
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
+    
+    def get_presets(self) -> List[Dict[str, Any]]:
+        """Get all presets."""
+        return self.presets
+    
+    def create_preset(self, name: str, description: str, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Create a new preset."""
+        preset = {
+            "id": str(uuid.uuid4()),
+            "name": name,
+            "description": description,
+            "values": values,
+            "created_at": time.time()
+        }
+        self.presets.append(preset)
+        return preset
+    
+    def get_preset(self, preset_id: str) -> Dict[str, Any]:
+        """Get a preset by ID."""
+        for preset in self.presets:
+            if preset["id"] == preset_id:
+                return preset
+        raise HTTPException(status_code=404, detail="Preset not found")
+    
+    def update_preset(self, preset_id: str, name: Optional[str] = None, description: Optional[str] = None, values: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """Update a preset by ID."""
+        preset = self.get_preset(preset_id)
+        if name is not None:
+            preset["name"] = name
+        if description is not None:
+            preset["description"] = description
+        if values is not None:
+            preset["values"] = values
+        preset["updated_at"] = time.time()
+        return preset
+    
+    def delete_preset(self, preset_id: str) -> Dict[str, Any]:
+        """Delete a preset by ID."""
+        preset = self.get_preset(preset_id)
+        self.presets.remove(preset)
+        return {"status": "deleted", "message": f"Preset {preset_id} deleted successfully"}
+
+
+async def execute_task(pyguizer_app: PyGUIzerApp, task_manager: TaskManager, task_id: str, inputs: Dict[str, Any]):
+    """Execute a task asynchronously with progress updates."""
+    try:
+        # Update task status to running
+        task_manager.update_task(
+            task_id,
+            status=TaskStatus.RUNNING,
+            started_at=time.time(),
+            progress=0.0,
+            message="Task started"
+        )
+        
+        # Simulate progress updates
+        for i in range(0, 100, 20):
+            task_manager.update_task(
+                task_id,
+                progress=i/100,
+                message=f"Processing... {i}%"
+            )
+            await asyncio.sleep(0.5)
+            
+            # Check if task was cancelled
+            task = task_manager.get_task(task_id)
+            if task["cancelled"]:
+                return
+        
+        # Run the actual function
+        result = pyguizer_app.run_function(inputs)
+        
+        # Update task status to success
+        task_manager.update_task(
+            task_id,
+            status=TaskStatus.SUCCESS,
+            completed_at=time.time(),
+            progress=1.0,
+            message="Task completed successfully",
+            result=result
+        )
+        
+    except Exception as e:
+        # Update task status to failed
+        task_manager.update_task(
+            task_id,
+            status=TaskStatus.FAILED,
+            completed_at=time.time(),
+            error=str(e),
+            message="Task failed"
+        )
 
 
 def create_app(func, layout=None):
     """Create a FastAPI app for the given function."""
     app = FastAPI(title="PyGUIzer App", description="Generated by PyGUIzer")
     pyguizer_app = PyGUIzerApp(func, layout)
+    task_manager = TaskManager()
     
     # Define API routes first (order matters!)
     @app.get("/api/spec")
@@ -73,11 +316,96 @@ def create_app(func, layout=None):
     @app.post("/api/run", response_model=RunResponse)
     async def run(request: RunRequest):
         """Run the function with provided inputs."""
-        import time
-        start_time = time.time()
-        result = pyguizer_app.run_function(request.inputs)
-        execution_time = time.time() - start_time
-        return RunResponse(result=result, execution_time=execution_time)
+        # Create a new task
+        task_id = task_manager.create_task()
+        
+        # Start task execution in the background
+        asyncio.create_task(execute_task(pyguizer_app, task_manager, task_id, request.inputs))
+        
+        return RunResponse(task_id=task_id, status=TaskStatus.PENDING)
+    
+    @app.get("/api/tasks/{task_id}", response_model=TaskInfo)
+    async def get_task(task_id: str):
+        """Get task information by ID."""
+        task = task_manager.get_task(task_id)
+        return TaskInfo(
+            task_id=task_id,
+            status=task["status"],
+            created_at=task["created_at"],
+            started_at=task["started_at"],
+            completed_at=task["completed_at"],
+            result=task["result"],
+            error=task["error"],
+            progress=task["progress"],
+            message=task["message"]
+        )
+    
+    @app.post("/api/tasks/{task_id}/cancel")
+    async def cancel_task(task_id: str):
+        """Cancel a running task."""
+        task_manager.cancel_task(task_id)
+        return {"status": "cancelled"}
+    
+    @app.websocket("/api/tasks/{task_id}/stream")
+    async def websocket_endpoint(websocket: WebSocket, task_id: str):
+        """WebSocket endpoint for real-time task updates."""
+        # Check if task exists
+        task_manager.get_task(task_id)
+        
+        # Connect WebSocket
+        await task_manager.manager.connect(websocket, task_id)
+        
+        try:
+            # Send initial task status
+            task = task_manager.get_task(task_id)
+            await websocket.send_json({
+                "type": "task_update",
+                "task_id": task_id,
+                "task": task
+            })
+            
+            # Keep connection alive and listen for messages
+            while True:
+                data = await websocket.receive_json()
+                if data.get("type") == "cancel":
+                    task_manager.cancel_task(task_id)
+        except WebSocketDisconnect:
+            task_manager.manager.disconnect(websocket, task_id)
+    
+    # Preset management endpoints
+    @app.get("/api/presets", response_model=List[PresetResponse])
+    async def get_presets():
+        """Get all presets."""
+        return pyguizer_app.get_presets()
+    
+    @app.post("/api/presets", response_model=PresetResponse)
+    async def create_preset(preset_data: PresetCreate):
+        """Create a new preset."""
+        return pyguizer_app.create_preset(
+            name=preset_data.name,
+            description=preset_data.description,
+            values=preset_data.values
+        )
+    
+    @app.get("/api/presets/{preset_id}", response_model=PresetResponse)
+    async def get_preset(preset_id: str):
+        """Get a preset by ID."""
+        return pyguizer_app.get_preset(preset_id)
+    
+    @app.put("/api/presets/{preset_id}", response_model=PresetResponse)
+    async def update_preset(preset_id: str, preset_data: PresetUpdate):
+        """Update a preset by ID."""
+        return pyguizer_app.update_preset(
+            preset_id=preset_id,
+            name=preset_data.name,
+            description=preset_data.description,
+            values=preset_data.values
+        )
+    
+    @app.delete("/api/presets/{preset_id}")
+    async def delete_preset(preset_id: str):
+        """Delete a preset by ID."""
+        return pyguizer_app.delete_preset(preset_id)
     
     # Mount static files for frontend - should come after API routes
     # This way, API requests are routed to the API endpoints, not the static files

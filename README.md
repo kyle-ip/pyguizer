@@ -7,19 +7,15 @@
 
 Automatically generate interactive, production-ready web GUI applications from standard Python function signatures and type hints. PyGUIzer bridges the gap between Python's powerful backend logic and accessible user interfaces, enabling rapid prototyping and deployment with zero frontend code.
 
-### ✨ New Feature: Hand-Drawn Style UI
-
-PyGUIzer now features a fun, hand-drawn style UI with:
-- 📝 Comic-style font for a playful feel
-- 🎨 Sketchy borders and paper-like background
-- 🔄 Subtle rotations for each section
-- 🌟 Animated buttons with hover effects
-- 🎛️ Fun, interactive sliders and checkboxes
-- 📱 Responsive design for different screen sizes
-
 ## ✨ Features
 
-- **Automatic UI Generation**: Create complete web GUIs from Python function signatures alone
+- **Automatic UI Generation**: Create complete web (hand-drawn style) GUIs from Python function signatures alone
+  - 📝 Comic-style font for a playful feel
+  - 🎨 Sketchy borders and paper-like background
+  - 🔄 Subtle rotations for each section
+  - 🌟 Animated buttons with hover effects
+  - 🎛️ Fun, interactive sliders and checkboxes
+  - 📱 Responsive design for different screen sizes
 - **Intelligent Type Mapping**: Smart conversion of Python types to appropriate UI widgets
 - **Developer Experience First**: Clean API designed for "vibe coding" with AI assistant support
 - **Production-Ready**: Built on FastAPI and React for robust, scalable applications
@@ -88,14 +84,14 @@ Open your browser to `http://localhost:8000` to see your generated GUI!
 
 PyGUIzer automatically maps Python types to appropriate UI widgets:
 
-| Python Type | Widget Type | Example |
-|-------------|-------------|---------|
-| `str`       | Text Input  | `name: str` |
-| `int`       | Number Input | `age: int` |
-| `float`     | Slider      | `temperature: float` |
-| `bool`      | Checkbox    | `is_active: bool` |
-| `List[str]` | Multi-select | `hobbies: List[str]` |
-| `Dict`      | JSON Editor | `config: Dict[str, Any]` |
+| Python Type | Widget Type  | Example                  |
+| ----------- | ------------ | ------------------------ |
+| `str`       | Text Input   | `name: str`              |
+| `int`       | Number Input | `age: int`               |
+| `float`     | Slider       | `temperature: float`     |
+| `bool`      | Checkbox     | `is_active: bool`        |
+| `List[str]` | Multi-select | `hobbies: List[str]`     |
+| `Dict`      | JSON Editor  | `config: Dict[str, Any]` |
 
 ### Layout Customization
 
@@ -245,4 +241,3 @@ See our [Technical Solution Document](docs/TECHNICAL_SOLUTION.md) for the comple
 ## 🙏 Acknowledgments
 
 PyGUIzer was inspired by the need to bridge the gap between Python's powerful backend ecosystem and accessible user interfaces. Special thanks to all contributors and the open-source community for their support.
-

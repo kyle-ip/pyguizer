@@ -1,5 +1,5 @@
 import React from 'react';
-import { WidgetSpec } from '../types';
+import { WidgetSpec } from '../types/index';
 
 interface WidgetFactoryProps {
   widget: WidgetSpec;
@@ -92,9 +92,9 @@ const WidgetFactory: React.FC<WidgetFactoryProps> = ({ widget, value, onChange }
               onChange(id, selectedOptions);
             }}
           >
-            {constraints.options?.map((option: string) => (
-              <option key={option} value={option}>
-                {option}
+            {constraints.options?.map((option: any) => (
+              <option key={option.value} value={option.value}>
+                {option.label || option.value}
               </option>
             )) || (
               <option value="">No options available</option>
@@ -110,9 +110,9 @@ const WidgetFactory: React.FC<WidgetFactoryProps> = ({ widget, value, onChange }
             onChange={handleChange}
           >
             <option value="">Select an option</option>
-            {constraints.options?.map((option: string) => (
-              <option key={option} value={option}>
-                {option}
+            {constraints.options?.map((option: any) => (
+              <option key={option.value} value={option.value}>
+                {option.label || option.value}
               </option>
             )) || (
               <option value="">No options available</option>
@@ -135,6 +135,63 @@ const WidgetFactory: React.FC<WidgetFactoryProps> = ({ widget, value, onChange }
             }}
             rows={6}
             placeholder={`Enter JSON for ${label.toLowerCase()}`}
+          />
+        );
+        
+      case 'file_upload':
+        return (
+          <input
+            type="file"
+            id={id}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                // For now, we'll just send the file name
+                // In a real app, you'd handle file uploads properly
+                onChange(id, file.name);
+              }
+            }}
+            accept={constraints.accept || '*/*'}
+          />
+        );
+        
+      case 'date':
+        return (
+          <input
+            type="date"
+            id={id}
+            value={displayValue || ''}
+            onChange={handleChange}
+          />
+        );
+        
+      case 'time':
+        return (
+          <input
+            type="time"
+            id={id}
+            value={displayValue || ''}
+            onChange={handleChange}
+          />
+        );
+        
+      case 'datetime':
+        return (
+          <input
+            type="datetime-local"
+            id={id}
+            value={displayValue || ''}
+            onChange={handleChange}
+          />
+        );
+        
+      case 'color':
+        return (
+          <input
+            type="color"
+            id={id}
+            value={displayValue || '#000000'}
+            onChange={handleChange}
           />
         );
         
