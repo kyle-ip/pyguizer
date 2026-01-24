@@ -1,0 +1,76 @@
+[tool.poetry]
+name = "pyguizer"
+version = "0.1.0"
+description = "Automatic Web GUI Generator for Python Functions"
+authors = ["Your Name <your.email@example.com>"]
+readme = "README.md"
+packages = [{include = "pyguizer"}]
+homepage = "https://github.com/yourusername/pyguizer"
+repository = "https://github.com/yourusername/pyguizer"
+license = "MIT"
+keywords = ["gui", "web", "python", "fastapi", "automatic", "generator"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: User Interfaces",
+    "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
+    "Development Status :: 3 - Alpha"
+]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.104.1"
+pydantic = "^2.5.2"
+typer = "^0.9.0"
+uvicorn = "^0.24.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "^7.4.3"
+black = "^23.11.0"
+isort = "^5.12.0"
+flake8 = "^6.1.0"
+httpx = "^0.25.2"
+pytest-cov = "^4.1.0"
+pytest-mock = "^3.12.0"
+
+[tool.poetry.scripts]
+pyguizer = "pyguizer.cli:app"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 88
+target-version = ['py310']
+include = '\.pyi?$'
+exclude = '''
+/(\.
+    |build
+    |dist
+    |venv
+    |__pycache__
+    |frontend
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line-length = 88
+skip_gitignore = true
+exclude = ["venv", "__pycache__", "build", "dist", "frontend"]
+
+[tool.flake8]
+max-line-length = 88
+exclude = [".git", "__pycache__", "build", "dist", "venv", "frontend"]
+extend-ignore = E203, W503  # Ignore black-related formatting issues
+select = E, F, W, C90

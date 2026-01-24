@@ -1,0 +1,74 @@
+# Dependencies
+node_modules/
+*.egg-info/
+.eggs/
+.pytest_cache/
+.tox/
+.venv/
+venv/
+ENV/
+env/
+
+# Build outputs
+dist/
+build/
+*.pyc
+__pycache__/
+*.pyd
+*.so
+*.dylib
+*.dll
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs and temporary files
+logs/
+*.log
+*.tmp
+*.temp
+.cache/
+
+# Coverage reports
+coverage/
+.coverage
+.coverage.*
+htmlcov/
+lcov.info
+
+# Configuration files
+.env
+.env.local
+.env.*.local
+
+# Testing
+.mypy_cache/
+.pylint.d/
+
+# Misc
+*.bak
+*.orig
+*.rej
+*.patch
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Frontend
+frontend/node_modules/
+frontend/.cache/
+frontend/dist/
+frontend/coverage/
+
+# PyInstaller
+*.spec
+
+# Sphinx documentation
+docs/_build/
