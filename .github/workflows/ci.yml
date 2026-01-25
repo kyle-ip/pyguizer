@@ -38,9 +38,30 @@ jobs:
       run: |
         isort --check pyguizer tests
     
-    - name: Test with pytest
+    - name: Test with pytest and coverage
       run: |
-        pytest tests/ -v
+        pytest tests/ -v --cov=pyguizer --cov-report=xml --cov-report=term-missing
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+    
+    - name: Test frontend
+      run: |
+        cd frontend
+        npm ci
+        npm test -- --coverage --watchAll=false
     
     - name: Build package
       run: |
