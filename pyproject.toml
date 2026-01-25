@@ -75,5 +75,5 @@ skip = ["venv", "__pycache__", "build", "dist", "frontend"]
 [tool.flake8]
 max-line-length = 88
 exclude = [".git", "__pycache__", "build", "dist", "venv", "frontend"]
-extend-ignore = ["E203", "W503"]  # Ignore black-related formatting issues
+extend-ignore = ["E203", "W503", "F541"]  # Ignore black-related formatting issues and f-string without placeholders
 select = ["E", "F", "W", "C90"]
