@@ -209,11 +209,34 @@ Tests run automatically on:
 
 ### CI Pipeline
 
-1. **Lint**: Code style checks
-2. **Unit Tests**: Fast unit tests
-3. **Integration Tests**: Slower integration tests
-4. **Coverage**: Generate coverage reports
-5. **Publish**: Upload coverage to codecov
+The enhanced CI/CD pipeline includes:
+
+1. **Security Scanning**:
+   - Bandit: Python code vulnerability scanning
+   - pip-audit: Python dependency vulnerability scanning and auto-fix
+   - npm audit: Frontend dependency vulnerability scanning and auto-fix
+   - Weekly scheduled vulnerability scans
+
+2. **Code Quality & Refactoring**:
+   - Automatic fixes: black, isort, autoflake, ESLint
+   - PyLint: Code quality analysis with configurable thresholds
+   - Auto-commit: Code quality fixes automatically committed to PR branches
+
+3. **Lint**: Code style checks (flake8, black, isort)
+
+4. **Unit Tests**: Fast unit tests across Python 3.8-3.12
+
+5. **Integration Tests**: Complete workflow and API endpoint tests
+
+6. **Regression Tests**: Backward compatibility verification
+
+7. **Frontend Tests**: Unit and integration tests for React components
+
+8. **Coverage**: Generate coverage reports and upload to Codecov
+
+9. **Deployment**: 
+   - GitHub Pages: Auto-deploy demos on merge to main
+   - PyPI: Auto-publish on merge to main (if configured)
 
 ## Debugging Tests
 
