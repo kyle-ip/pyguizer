@@ -132,10 +132,7 @@ def run(
 
 @app.command(name="init")
 def init(
-    project_name: str = typer.Argument(
-        ..., 
-        help="Name of the new PyGUIzer project"
-    ),
+    project_name: str = typer.Argument(..., help="Name of the new PyGUIzer project"),
 ):
     """Initialize a new PyGUIzer project."""
     # Create project directory

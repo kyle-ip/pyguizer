@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Any, Dict, FrozenSet, List, Optional, Set, Tuple
 from uuid import UUID
 
-
 from pyguizer.core.widget import (
     WIDGET_REGISTRY,
     WidgetType,

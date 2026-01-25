@@ -1,6 +1,5 @@
 """Test coverage configuration and utilities."""
 
-
 import coverage
 import pytest
 

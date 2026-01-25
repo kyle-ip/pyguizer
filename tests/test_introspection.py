@@ -1,6 +1,5 @@
 """Unit tests for function introspection functionality."""
 
-
 from pyguizer.core.introspection import introspect_function
 
 

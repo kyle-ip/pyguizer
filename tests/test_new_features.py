@@ -11,7 +11,9 @@ sys.path.insert(0, ".")
 
 from pyguizer.core.introspection import introspect_function  # noqa: E402
 from pyguizer.core.widget import (  # noqa: E402
-    WidgetType, generate_wso, register_widget_mapping
+    WidgetType,
+    generate_wso,
+    register_widget_mapping,
 )
 
 
@@ -66,7 +68,7 @@ print("🔍 Testing PyGUIzer New Features...\n")
 print("1. Testing function introspection with advanced types...")
 try:
     func_info = introspect_function(test_function)
-    param_count = len(func_info['parameters'])
+    param_count = len(func_info["parameters"])
     print(f"   ✅ Introspection successful! Found {param_count} parameters")
 
     # Print parameter details
@@ -136,8 +138,10 @@ try:
         print("   ✅ Custom type correctly mapped to text widget")
     else:
         expected_type = WidgetType.TEXT
-        print(f"   ❌ Custom mapping failed: Expected {expected_type}, "
-              f"got {actual_type}")
+        print(
+            f"   ❌ Custom mapping failed: Expected {expected_type}, "
+            f"got {actual_type}"
+        )
 
 except Exception as e:
     print(f"   ❌ Custom widget registry failed: {e}")
