@@ -181,7 +181,10 @@ class TaskManager:
 class PyGUIzerApp:
     """Main PyGUIzer application class."""
 
-    def __init__(self, func=None, layout=None):
+    def __init__(self, name="PyGUIzer App", description="Multi-function PyGUIzer Application", func=None, layout=None):
+        self.name = name
+        self.description = description
+        
         self.layout = layout or {
             "containers": [{"name": "Main", "type": "section", "widgets": []}]
         }
@@ -231,8 +234,8 @@ class PyGUIzerApp:
             )
 
         return {
-            "name": "PyGUIzer App",
-            "description": "Multi-function PyGUIzer Application",
+            "name": self.name,
+            "description": self.description,
             "functions": functions,
         }
 

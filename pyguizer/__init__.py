@@ -22,7 +22,7 @@ class PyGUIzer:
         return func
 
     @classmethod
-    def run(cls, host="0.0.0.0", port=8000, title="PyGUIzer App"):
+    def run(cls, host="0.0.0.0", port=8000, title="PyGUIzer App", description="Multi-function PyGUIzer Application"):
         """
         Run the PyGUIzer application with all registered functions.
 
@@ -37,7 +37,7 @@ class PyGUIzer:
         from pyguizer.api.app import create_app as create_fastapi_app
 
         # Create PyGUIzerApp instance
-        pyguizer_app = PyGUIzerApp()
+        pyguizer_app = PyGUIzerApp(name=title, description=description)
 
         # Register all decorated functions
         for func in cls.registered_functions:

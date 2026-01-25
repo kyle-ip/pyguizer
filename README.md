@@ -7,6 +7,8 @@
 
 Automatically generate interactive, production-ready web GUI applications from standard Python function signatures and type hints. PyGUIzer bridges the gap between Python's powerful backend logic and accessible user interfaces, enabling rapid prototyping and deployment with zero frontend code.
 
+![alt text](/docs/image.png)
+
 ## ✨ Features
 
 ### Core Functionality
