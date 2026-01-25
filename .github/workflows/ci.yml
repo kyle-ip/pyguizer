@@ -226,11 +226,11 @@ jobs:
 
       - name: Run frontend unit tests
         run: |
-          cd frontend && npm test -- --coverage --watchAll=false --testPathPatterns="\.test\.(ts|tsx)$" --testPathIgnorePattern="integration"
+          cd frontend && npm test -- --coverage --watchAll=false --testPathIgnorePatterns="integration"
 
       - name: Run frontend integration tests
         run: |
-          cd frontend && npm test -- --coverage --watchAll=false --testPathPatterns="integration\.test\.(ts|tsx)$"
+          cd frontend && npm test -- --coverage --watchAll=false --testMatch="**/*.integration.test.{ts,tsx}"
 
       - name: Build Python package
         run: |
