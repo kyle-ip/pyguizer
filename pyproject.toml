@@ -69,7 +69,7 @@ exclude = '''
 profile = "black"
 line_length = 88
 skip_gitignore = true
-exclude = ["venv", "__pycache__", "build", "dist", "frontend"]
+skip = ["venv", "__pycache__", "build", "dist", "frontend"]
 
 [tool.flake8]
 max-line-length = 88
