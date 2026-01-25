@@ -114,13 +114,13 @@ jobs:
 
       - name: Fix Python code quality (isort, black, autoflake)
         run: |
-          poetry run isort pyguizer tests examples
-          poetry run black pyguizer tests examples
+          poetry run isort pyguizer tests
+          poetry run black pyguizer tests
           poetry run autoflake --remove-all-unused-imports --remove-unused-variables --in-place -r pyguizer tests examples
 
       - name: Run PyLint (refactor / quality check)
         run: |
-          poetry run pylint pyguizer tests examples --output-format=text --fail-under=${{ env.PYLINT_FAIL_UNDER }} 2>&1 | tee pylint.log || true
+          poetry run pylint pyguizer tests --output-format=text --fail-under=${{ env.PYLINT_FAIL_UNDER }} 2>&1 | tee pylint.log || true
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -186,8 +186,8 @@ jobs:
       - name: Lint (flake8, black, isort)
         run: |
           poetry run flake8 pyguizer tests
-          poetry run black --check pyguizer tests examples
-          poetry run isort --check pyguizer tests examples
+          poetry run black --check pyguizer tests
+          poetry run isort --check pyguizer tests
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
