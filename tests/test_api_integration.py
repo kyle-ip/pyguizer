@@ -148,8 +148,18 @@ class TestAPIRunEndpoint:
             "/api/run", json={"func_name": "add", "inputs": {"a": "invalid", "b": 3}}
         )
 
-        # Should either return 400 or 500 depending on validation
-        assert response.status_code in [400, 422, 500]
+        # Async API returns 200 with task_id, error happens during execution
+        assert response.status_code == 200
+        task_id = response.json()["task_id"]
+
+        # Wait for task to fail
+        for _ in range(10):
+            time.sleep(0.1)
+            task_response = test_client.get(f"/api/tasks/{task_id}")
+            task = task_response.json()
+            if task["status"] == "failed":
+                assert "error" in task
+                break
 
 
 @pytest.mark.integration

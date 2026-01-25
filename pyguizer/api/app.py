@@ -392,6 +392,12 @@ def create_app(pyguizer_app=None, func=None, layout=None):
     @app.post("/api/run", response_model=RunResponse)
     async def run(request: RunRequest):
         """Run a function with provided inputs."""
+        # Validate function exists before creating task
+        if request.func_name not in pyguizer_app.function_registry:
+            raise HTTPException(
+                status_code=404, detail=f"Function '{request.func_name}' not found"
+            )
+
         # Create a new task
         task_id = task_manager.create_task()
 
@@ -419,12 +425,13 @@ def create_app(pyguizer_app=None, func=None, layout=None):
     @app.get("/api/functions/{func_name}")
     async def get_function(func_name: str):
         """Get details for a specific function."""
-        try:
-            if func_name not in pyguizer_app.function_registry:
-                raise HTTPException(
-                    status_code=404, detail=f"Function '{func_name}' not found"
-                )
+        # Check if function exists first (before any processing)
+        if func_name not in pyguizer_app.function_registry:
+            raise HTTPException(
+                status_code=404, detail=f"Function '{func_name}' not found"
+            )
 
+        try:
             func_data = pyguizer_app.function_registry[func_name]
 
             # Convert parameter types to strings for JSON serialization
