@@ -8,11 +8,11 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main, feat/automation]
+    branches: [main, feat/test_automation]
   pull_request:
-    branches: [main, feat/automation]
+    branches: [main, feat/test_automation]
   schedule:
-    - cron: "0 0 * * 0"  # Weekly vulnerability scan
+    - cron: "0 0 0 * *"  # Daily vulnerability scan
 
 env:
   PYTHON_VERSION: "3.11"
