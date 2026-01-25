@@ -92,17 +92,58 @@ We accept pull requests for bug fixes, feature enhancements, and documentation i
 
 ### Running Tests
 
+PyGUIzer has comprehensive test suites covering unit tests, integration tests, and regression tests.
+
+**Backend Tests:**
 ```bash
 # Run all tests
-python -m pytest
+pytest
 
-# Run specific test modules
-python -m pytest tests/test_core.py -v
-python -m pytest tests/verify_core.py -v
+# Run with coverage report
+pytest --cov=pyguizer --cov-report=html --cov-report=term-missing
 
-# Run tests with coverage
-python -m pytest --cov=pyguizer
+# Run specific test categories
+pytest -m unit          # Unit tests only
+pytest -m integration   # Integration tests only
+pytest -m regression    # Regression tests only
+pytest -m core          # Core functionality tests
+pytest -m api           # API endpoint tests
+
+# Run specific test file
+pytest tests/test_introspection_unit.py -v
+
+# Run with verbose output and stop on first failure
+pytest -v -x
+
+# View HTML coverage report
+open htmlcov/index.html  # macOS
+start htmlcov/index.html  # Windows
 ```
+
+**Frontend Tests:**
+```bash
+cd frontend
+
+# Run all tests
+npm test
+
+# Run with coverage
+npm run test:coverage
+
+# Watch mode for development
+npm run test:watch
+
+# Run specific test file
+npm test -- App.test.tsx
+```
+
+**Test Structure:**
+- **Unit Tests**: Test individual modules (`test_*_unit.py`)
+- **Integration Tests**: Test complete workflows (`test_api_integration.py`)
+- **Regression Tests**: Ensure backward compatibility (`test_regression.py`)
+- **Frontend Tests**: Component and integration tests
+
+For more details, see [TESTING.md](TESTING.md) and [tests/README.md](tests/README.md).
 
 ### Code Quality
 
@@ -205,10 +246,47 @@ Common types include:
 
 ## Testing
 
-- Write unit tests for core functionality
-- Write integration tests for API endpoints
-- Test edge cases and error conditions
-- Aim for high test coverage
+PyGUIzer maintains comprehensive test coverage. When contributing:
+
+### Test Requirements
+
+1. **Write tests for new features**: All new functionality must include tests
+2. **Update tests for changes**: When modifying existing code, update relevant tests
+3. **Test edge cases**: Include tests for error conditions and boundary cases
+4. **Maintain coverage**: Aim for 80%+ coverage, 100% for critical paths
+
+### Test Categories
+
+- **Unit Tests** (`-m unit`): Test individual functions and modules
+- **Integration Tests** (`-m integration`): Test complete workflows and API endpoints
+- **Regression Tests** (`-m regression`): Ensure backward compatibility
+
+### Test Files
+
+**Backend:**
+- `test_introspection_unit.py` - Function introspection tests
+- `test_widget_unit.py` - Widget generation tests
+- `test_layout_unit.py` - Layout processing tests
+- `test_api_integration.py` - API endpoint integration tests
+- `test_regression.py` - Regression tests
+
+**Frontend:**
+- `App.test.tsx` - Main App component tests
+- `App.integration.test.tsx` - Integration tests
+- `WidgetFactory.test.tsx` - Widget factory tests
+- `api.test.ts` - API service tests
+
+### Running Tests Before Submitting
+
+```bash
+# Backend: Ensure all tests pass
+pytest --cov=pyguizer --cov-fail-under=80
+
+# Frontend: Ensure all tests pass
+cd frontend && npm test -- --coverage --watchAll=false
+```
+
+See [TESTING.md](TESTING.md) for detailed testing guidelines.
 
 ## License
 

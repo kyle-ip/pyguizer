@@ -75,11 +75,22 @@ The competitive landscape consists of adjacent tools, but none directly solve th
 *   It must provide a build command to generate a **standalone desktop binary** using a lightweight webview framework (e.g., Tauri for minimal size) or Electron for maximum compatibility.
 *   The architecture must cleanly separate the frontend from the backend API, allowing for custom frontend builds.
 
+**FR5: Multi-function Support**
+*   The framework must allow registering **multiple functions** within a single application.
+*   It must display registered functions in a **sidebar** with their names and descriptions.
+*   Users must be able to **drag and drop functions** from the sidebar into a central execution panel.
+*   The central panel must support displaying multiple function UIs simultaneously.
+*   Each function UI must maintain its own **independent state** (inputs, results, execution status).
+*   The framework must support **running multiple functions concurrently**.
+
 ## 7. Non-Functional Requirements
 *   **Performance:** UI must feel instant. Async endpoints must not block the server.
 *   **Security:** Input validation is mandatory. The design must discourage (or make explicit) the exposure of unsafe functions.
 *   **Developer Experience:** The API must be intuitive. The codebase must be well-typed to maximize the efficacy of AI coding assistants (GitHub Copilot, Cursor).
 *   **Extensibility:** The widget mapping system must be modular, allowing users to register custom type-to-widget converters.
+*   **Scalability:** The architecture must support handling multiple concurrent function executions efficiently.
+*   **Usability:** The function selection and execution interface must be intuitive for users without programming experience.
+*   **Reliability:** The framework must handle function execution failures gracefully, with clear error messages.
 
 ## 8. Technical Architecture Outline (High-Level)
 *   **Backend (Python):** Built on **FastAPI** for its async support, automatic OpenAPI generation, and ease of use. Uses Pydantic for robust validation and settings management.
