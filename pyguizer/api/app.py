@@ -25,6 +25,7 @@ class TaskStatus(str, Enum):
 
 class RunRequest(BaseModel):
     """Request model for running a function."""
+    func_name: str = Field(...)
     inputs: Dict[str, Any] = Field(...)
 
 
@@ -74,8 +75,8 @@ class PresetResponse(BaseModel):
 class AppSpec(BaseModel):
     """Application specification model."""
     name: str = Field(...)
-    description: str = Field(...) 
-    layout: Dict[str, Any] = Field(...)
+    description: str = Field(...)
+    functions: List[Dict[str, Any]] = Field(...)
 
 
 class ConnectionManager:
@@ -178,34 +179,65 @@ class TaskManager:
 class PyGUIzerApp:
     """Main PyGUIzer application class."""
     
-    def __init__(self, func, layout=None):
-        self.func = func
-        self.layout = layout or {"sections": [{"name": "Main", "widgets": []}]}
+    def __init__(self, func=None, layout=None):
+        self.layout = layout or {"containers": [{"name": "Main", "type": "section", "widgets": []}]}
         
-        # Introspect the function
-        self.func_info = introspect_function(func)
-        
-        # Generate WSOs
-        self.wsos = generate_wso(self.func_info["parameters"])
-        
-        # Process layout
-        self.ui_layout = process_layout(self.wsos, self.layout)
+        # Function registry - maps function name to function metadata
+        self.function_registry = {}
         
         # Preset management
         self.presets = []
+        
+        # If a function is provided during initialization, register it
+        if func:
+            self.register_function(func)
+    
+    def register_function(self, func, layout=None):
+        """Register a new function with the application."""
+        # Introspect the function
+        func_info = introspect_function(func)
+        
+        # Generate WSOs
+        wsos = generate_wso(func_info["parameters"])
+        
+        # Process layout for this function
+        function_layout = process_layout(wsos, layout or self.layout)
+        
+        # Register the function
+        func_name = func.__name__
+        self.function_registry[func_name] = {
+            "func": func,
+            "func_info": func_info,
+            "wsos": wsos,
+            "ui_layout": function_layout
+        }
     
     def get_app_spec(self) -> Dict[str, Any]:
         """Get the application specification."""
+        # Build function specs for all registered functions
+        functions = []
+        for func_name, func_data in self.function_registry.items():
+            functions.append({
+                "name": func_name,
+                "display_name": func_data["func_info"]["name"],
+                "description": func_data["func_info"]["docstring"],
+                "layout": func_data["ui_layout"]
+            })
+        
         return {
-            "name": self.func_info["name"],
-            "description": self.func_info["docstring"],
-            "layout": self.ui_layout
+            "name": "PyGUIzer App",
+            "description": "Multi-function PyGUIzer Application",
+            "functions": functions
         }
     
-    def run_function(self, inputs: Dict[str, Any]) -> Any:
-        """Run the function with provided inputs."""
+    def run_function(self, func_name: str, inputs: Dict[str, Any]) -> Any:
+        """Run a registered function with provided inputs."""
+        if func_name not in self.function_registry:
+            raise HTTPException(status_code=404, detail=f"Function '{func_name}' not found")
+        
+        func = self.function_registry[func_name]["func"]
         try:
-            return self.func(**inputs)
+            return func(**inputs)
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
     
@@ -251,7 +283,7 @@ class PyGUIzerApp:
         return {"status": "deleted", "message": f"Preset {preset_id} deleted successfully"}
 
 
-async def execute_task(pyguizer_app: PyGUIzerApp, task_manager: TaskManager, task_id: str, inputs: Dict[str, Any]):
+async def execute_task(pyguizer_app: PyGUIzerApp, task_manager: TaskManager, task_id: str, func_name: str, inputs: Dict[str, Any]):
     """Execute a task asynchronously with progress updates."""
     try:
         # Update task status to running
@@ -270,7 +302,7 @@ async def execute_task(pyguizer_app: PyGUIzerApp, task_manager: TaskManager, tas
                 progress=i/100,
                 message=f"Processing... {i}%"
             )
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(0)
             
             # Check if task was cancelled
             task = task_manager.get_task(task_id)
@@ -278,7 +310,7 @@ async def execute_task(pyguizer_app: PyGUIzerApp, task_manager: TaskManager, tas
                 return
         
         # Run the actual function
-        result = pyguizer_app.run_function(inputs)
+        result = pyguizer_app.run_function(func_name, inputs)
         
         # Update task status to success
         task_manager.update_task(
@@ -301,10 +333,12 @@ async def execute_task(pyguizer_app: PyGUIzerApp, task_manager: TaskManager, tas
         )
 
 
-def create_app(func, layout=None):
-    """Create a FastAPI app for the given function."""
+def create_app(pyguizer_app=None, func=None, layout=None):
+    """Create a FastAPI app for the given function(s)."""
     app = FastAPI(title="PyGUIzer App", description="Generated by PyGUIzer")
-    pyguizer_app = PyGUIzerApp(func, layout)
+    # Use provided pyguizer_app instance or create a new one
+    if pyguizer_app is None:
+        pyguizer_app = PyGUIzerApp(func, layout)
     task_manager = TaskManager()
     
     # Define API routes first (order matters!)
@@ -315,14 +349,89 @@ def create_app(func, layout=None):
     
     @app.post("/api/run", response_model=RunResponse)
     async def run(request: RunRequest):
-        """Run the function with provided inputs."""
+        """Run a function with provided inputs."""
         # Create a new task
         task_id = task_manager.create_task()
         
         # Start task execution in the background
-        asyncio.create_task(execute_task(pyguizer_app, task_manager, task_id, request.inputs))
+        asyncio.create_task(execute_task(pyguizer_app, task_manager, task_id, request.func_name, request.inputs))
         
         return RunResponse(task_id=task_id, status=TaskStatus.PENDING)
+    
+    @app.get("/api/functions")
+    async def get_functions():
+        """Get all registered functions."""
+        return [{
+            "name": func_name,
+            "display_name": func_data["func_info"]["name"],
+            "description": func_data["func_info"]["docstring"]
+        } for func_name, func_data in pyguizer_app.function_registry.items()]
+    
+    @app.get("/api/functions/{func_name}")
+    async def get_function(func_name: str):
+        """Get details for a specific function."""
+        try:
+            if func_name not in pyguizer_app.function_registry:
+                raise HTTPException(status_code=404, detail=f"Function '{func_name}' not found")
+            
+            func_data = pyguizer_app.function_registry[func_name]
+            
+            # Convert parameter types to strings for JSON serialization
+            parameters = []
+            for param in func_data["func_info"]["parameters"]:
+                param_copy = param.copy()
+                param_type = param_copy["type"]
+                # Handle different type representations
+                if hasattr(param_type, "__name__"):
+                    param_copy["type"] = param_type.__name__
+                elif hasattr(param_type, "_name"):
+                    param_copy["type"] = param_type._name
+                else:
+                    param_copy["type"] = str(param_type)
+                parameters.append(param_copy)
+            
+            # Check if layout is serializable
+            layout = func_data["ui_layout"]
+            
+            # Determine output information
+            return_type = func_data["func_info"]["return_type"]
+            outputs = []
+            
+            # If return type is a dict or tuple, we can extract multiple outputs
+            # For now, we'll always include "result" as the default output
+            # and add additional outputs if the return type suggests multiple values
+            outputs.append({
+                "name": "result",
+                "type": str(return_type) if hasattr(return_type, "__name__") else str(return_type),
+                "description": "Function return value"
+            })
+            
+            # Check if return type is a tuple or dict to suggest multiple outputs
+            if hasattr(return_type, "__origin__"):
+                origin = return_type.__origin__
+                if origin is dict:
+                    # For dict returns, we could extract keys, but that requires runtime info
+                    # For now, just use "result"
+                    pass
+                elif origin is tuple:
+                    # For tuple returns, we could suggest indexed outputs
+                    # But we'll keep it simple and just use "result" for now
+                    pass
+            
+            return {
+                "name": func_name,
+                "display_name": func_data["func_info"]["name"],
+                "description": func_data["func_info"]["docstring"],
+                "parameters": parameters,
+                "outputs": outputs,
+                "layout": layout
+            }
+        except Exception as e:
+            # Log the detailed error for debugging
+            import traceback
+            print(f"Error in get_function for {func_name}: {e}")
+            print(traceback.format_exc())
+            raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
     
     @app.get("/api/tasks/{task_id}", response_model=TaskInfo)
     async def get_task(task_id: str):

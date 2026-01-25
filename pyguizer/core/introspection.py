@@ -38,8 +38,11 @@ def introspect_function(func: Any) -> Dict[str, Any]:
         }
         parameters.append(param_info)
     
+    # Convert function name from snake_case to title case for display
+    display_name = func.__name__.replace('_', ' ').title()
+    
     return {
-        "name": func.__name__,
+        "name": display_name,
         "docstring": docstring,
         "parameters": parameters,
         "return_type": return_type

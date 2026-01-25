@@ -1,5 +1,11 @@
 import axios from 'axios';
-import { AppSpec, RunRequest, RunResponse, TaskInfo } from '../types/index';
+import {
+  AppSpec, 
+  RunRequest, 
+  RunResponse, 
+  TaskInfo,
+  FunctionInfo
+} from '../types/index';
 
 const API_BASE_URL = '/api';
 
@@ -18,9 +24,21 @@ export const getAppSpec = async (): Promise<AppSpec> => {
 };
 
 // Run the function with provided inputs
-export const runFunction = async (inputs: Record<string, any>): Promise<RunResponse> => {
-  const request: RunRequest = { inputs };
+export const runFunction = async (funcName: string, inputs: Record<string, any>): Promise<RunResponse> => {
+  const request: RunRequest = { func_name: funcName, inputs };
   const response = await api.post('/run', request);
+  return response.data;
+};
+
+// Get all registered functions
+export const getFunctions = async (): Promise<FunctionInfo[]> => {
+  const response = await api.get('/functions');
+  return response.data;
+};
+
+// Get a specific function
+export const getFunction = async (funcName: string): Promise<FunctionInfo> => {
+  const response = await api.get(`/functions/${funcName}`);
   return response.data;
 };
 
@@ -90,7 +108,6 @@ export const deletePreset = async (presetId: string): Promise<void> => {
 export class WebSocketManager {
   private ws: WebSocket | null = null;
   private listeners: Map<string, Array<(data: any) => void>> = new Map();
-  private taskId: string | null = null;
 
   connect(taskId: string): void {
     try {
@@ -98,8 +115,6 @@ export class WebSocketManager {
       if (this.ws) {
         this.ws.close();
       }
-
-      this.taskId = taskId;
 
       // Open new WebSocket connection
       const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/api/tasks/${taskId}/stream`;
@@ -143,7 +158,6 @@ export class WebSocketManager {
         this.ws.close();
         this.ws = null;
       }
-      this.taskId = null;
     } catch (error) {
       console.error('Error disconnecting WebSocket:', error);
     }
