@@ -167,21 +167,21 @@ def sample_function(name: str, age: int, is_active: bool = True) -> str:
 
 # Test function introspection
 func_info = introspect_function(sample_function)
-print(f"\n✓ Function introspection successful:")
+print("\n✓ Function introspection successful:")
 print(f"  Function name: {func_info['name']}")
 print(f"  Docstring: {func_info['docstring']}")
 print(f"  Parameters: {len(func_info['parameters'])}")
 
 # Test WSO generation
 wsos = generate_wso(func_info['parameters'])
-print(f"\n✓ WSO generation successful:")
+print("\n✓ WSO generation successful:")
 for wso in wsos:
     print(f"  - {wso['id']}: {wso['type']} (required: {wso['required']})")
 
 # Test layout processing
 layout_config = {"sections": [{"name": "Main", "widgets": ["name", "age"]}]}
 layout = process_layout(wsos, layout_config)
-print(f"\n✓ Layout processing successful:")
+print("\n✓ Layout processing successful:")
 print(f"  Sections: {len(layout['sections'])}")
 for section in layout['sections']:
     print(f"  - {section['name']}: {len(section['widgets'])} widgets")
