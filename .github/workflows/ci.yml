@@ -31,10 +31,24 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install Python dependencies
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 - --version 1.7.1
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          poetry --version
+
+      - name: Install Python dependencies with Poetry
+        run: |
+          poetry install --with dev
+
+      - name: Install additional security and linting tools
+        run: |
+          poetry add --dev isort bandit autoflake pylint black flake8 flake8-pyproject
+
+      - name: Install pip-audit for dependency scanning
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev]" pytest isort bandit autoflake pylint black flake8 flake8-pyproject
+          pip install pip-audit
 
       - name: Audit Python dependencies (pip-audit)
         run: |
@@ -51,8 +65,8 @@ jobs:
 
       - name: Scan Python code for vulnerabilities (Bandit)
         run: |
-          bandit -r pyguizer examples -f json -o bandit-results.json 2>/dev/null || true
-          bandit -r pyguizer examples -ll 2>&1 | tee bandit.log || true
+          poetry run bandit -r pyguizer examples -f json -o bandit-results.json 2>/dev/null || true
+          poetry run bandit -r pyguizer examples -ll 2>&1 | tee bandit.log || true
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -92,20 +106,29 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install Python dev tools
+      - name: Install Poetry
         run: |
-          python -m pip install --upgrade pip
-          pip install -e ".[dev]" isort bandit autoflake pylint black flake8 flake8-pyproject pytest-cov
+          curl -sSL https://install.python-poetry.org | python3 - --version 1.7.1
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          poetry --version
+
+      - name: Install Python dependencies with Poetry
+        run: |
+          poetry install --with dev
+
+      - name: Install additional linting and security tools
+        run: |
+          poetry add --dev isort bandit autoflake pylint black flake8 flake8-pyproject pytest-cov
 
       - name: Fix Python code quality (isort, black, autoflake)
         run: |
-          isort pyguizer tests examples
-          black pyguizer tests examples
-          autoflake --remove-all-unused-imports --remove-unused-variables --in-place -r pyguizer tests examples
+          poetry run isort pyguizer tests examples
+          poetry run black pyguizer tests examples
+          poetry run autoflake --remove-all-unused-imports --remove-unused-variables --in-place -r pyguizer tests examples
 
       - name: Run PyLint (refactor / quality check)
         run: |
-          pylint pyguizer tests examples --output-format=text --fail-under=${{ env.PYLINT_FAIL_UNDER }} 2>&1 | tee pylint.log || true
+          poetry run pylint pyguizer tests examples --output-format=text --fail-under=${{ env.PYLINT_FAIL_UNDER }} 2>&1 | tee pylint.log || true
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -158,36 +181,25 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install Python dependencies
+      - name: Install Poetry
         run: |
-          python -m pip install --upgrade pip
-          pip install -e ".[dev]" isort bandit autoflake pylint black flake8 flake8-pyproject pytest-cov pytest-cov
+          curl -sSL https://install.python-poetry.org | python3 - --version 1.7.1
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          poetry --version
+
+      - name: Install Python dependencies with Poetry
+        run: |
+          poetry install --with dev
+
+      - name: Install additional linting and security tools
+        run: |
+          poetry add --dev isort bandit autoflake pylint black flake8 flake8-pyproject pytest-cov httpx
 
       - name: Lint (flake8, black, isort)
         run: |
           flake8 pyguizer tests
           black --check pyguizer tests examples
           isort --check pyguizer tests examples
-
-      - name: Run unit tests
-        run: |
-          python -m pytest tests/ -v -k "not integration" --ignore=tests/test_regression.py --ignore=tests/test_api_integration.py --cov=pyguizer --cov-report=xml --cov-report=term-missing
-
-      - name: Run integration tests
-        run: |
-          python -m pytest tests/test_api_integration.py -v -m integration --cov=pyguizer --cov-report=xml --cov-report=term-missing --cov-append
-
-      - name: Run regression tests
-        run: |
-          python -m pytest tests/test_regression.py -v --cov=pyguizer --cov-report=xml --cov-report=term-missing --cov-append
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          files: ./coverage.xml
-          flags: unittests,integration,regression
-          name: codecov-${{ matrix.python-version }}
-          fail_ci_if_error: false
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -200,6 +212,30 @@ jobs:
         run: |
           cd frontend && npm ci
 
+      - name: Build frontend
+        run: |
+          cd frontend && npm run build
+
+      - name: Run unit tests
+        run: |
+          poetry run python -m pytest tests/ -v -k "not integration" --ignore=tests/test_regression.py --ignore=tests/test_api_integration.py --cov=pyguizer --cov-report=xml --cov-report=term-missing
+
+      - name: Run integration tests
+        run: |
+          poetry run python -m pytest tests/test_api_integration.py -v -m integration --cov=pyguizer --cov-report=xml --cov-report=term-missing --cov-append
+
+      - name: Run regression tests
+        run: |
+          poetry run python -m pytest tests/test_regression.py -v --cov=pyguizer --cov-report=xml --cov-report=term-missing --cov-append
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage.xml
+          flags: unittests,integration,regression
+          name: codecov-${{ matrix.python-version }}
+          fail_ci_if_error: false
+
       - name: Run frontend unit tests
         run: |
           cd frontend && npm test -- --coverage --watchAll=false --testPathPattern="\.test\.(ts|tsx)$" --testPathIgnorePattern="integration"
@@ -207,10 +243,6 @@ jobs:
       - name: Run frontend integration tests
         run: |
           cd frontend && npm test -- --coverage --watchAll=false --testPathPattern="integration\.test\.(ts|tsx)$"
-
-      - name: Build frontend
-        run: |
-          cd frontend && npm run build
 
       - name: Build Python package
         run: |
