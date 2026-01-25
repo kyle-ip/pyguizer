@@ -54,14 +54,18 @@ def test_api_spec_endpoint(test_client):
 def test_api_run_endpoint_add(test_client):
     """Test the /api/run endpoint with addition operation."""
     response = test_client.post(
-        "/api/run", json={"func_name": "calculate", "inputs": {"a": 10.0, "b": 5.0, "operation": "add"}}
+        "/api/run",
+        json={
+            "func_name": "calculate",
+            "inputs": {"a": 10.0, "b": 5.0, "operation": "add"},
+        },
     )
 
     assert response.status_code == 200
     data = response.json()
     assert "task_id" in data
     assert "status" in data
-    
+
     # Wait for task to complete
     task_id = data["task_id"]
     for _ in range(10):  # Poll up to 10 times
@@ -77,12 +81,16 @@ def test_api_run_endpoint_add(test_client):
 def test_api_run_endpoint_subtract(test_client):
     """Test the /api/run endpoint with subtraction operation."""
     response = test_client.post(
-        "/api/run", json={"func_name": "calculate", "inputs": {"a": 10.0, "b": 5.0, "operation": "subtract"}}
+        "/api/run",
+        json={
+            "func_name": "calculate",
+            "inputs": {"a": 10.0, "b": 5.0, "operation": "subtract"},
+        },
     )
 
     assert response.status_code == 200
     task_id = response.json()["task_id"]
-    
+
     # Wait for task to complete
     for _ in range(10):
         time.sleep(0.1)
@@ -96,12 +104,16 @@ def test_api_run_endpoint_subtract(test_client):
 def test_api_run_endpoint_multiply(test_client):
     """Test the /api/run endpoint with multiplication operation."""
     response = test_client.post(
-        "/api/run", json={"func_name": "calculate", "inputs": {"a": 10.0, "b": 5.0, "operation": "multiply"}}
+        "/api/run",
+        json={
+            "func_name": "calculate",
+            "inputs": {"a": 10.0, "b": 5.0, "operation": "multiply"},
+        },
     )
 
     assert response.status_code == 200
     task_id = response.json()["task_id"]
-    
+
     # Wait for task to complete
     for _ in range(10):
         time.sleep(0.1)
@@ -115,12 +127,16 @@ def test_api_run_endpoint_multiply(test_client):
 def test_api_run_endpoint_divide(test_client):
     """Test the /api/run endpoint with division operation."""
     response = test_client.post(
-        "/api/run", json={"func_name": "calculate", "inputs": {"a": 10.0, "b": 5.0, "operation": "divide"}}
+        "/api/run",
+        json={
+            "func_name": "calculate",
+            "inputs": {"a": 10.0, "b": 5.0, "operation": "divide"},
+        },
     )
 
     assert response.status_code == 200
     task_id = response.json()["task_id"]
-    
+
     # Wait for task to complete
     for _ in range(10):
         time.sleep(0.1)
@@ -134,13 +150,14 @@ def test_api_run_endpoint_divide(test_client):
 def test_api_run_endpoint_missing_required_param(test_client):
     """Test the /api/run endpoint with missing required parameter."""
     response = test_client.post(
-        "/api/run", json={"func_name": "calculate", "inputs": {"a": 10.0, "operation": "add"}}
+        "/api/run",
+        json={"func_name": "calculate", "inputs": {"a": 10.0, "operation": "add"}},
     )
 
     # Should create a task, but task will fail
     assert response.status_code == 200
     task_id = response.json()["task_id"]
-    
+
     # Wait for task to fail
     for _ in range(10):
         time.sleep(0.1)
@@ -154,13 +171,17 @@ def test_api_run_endpoint_missing_required_param(test_client):
 def test_api_run_endpoint_invalid_param_type(test_client):
     """Test the /api/run endpoint with invalid parameter type."""
     response = test_client.post(
-        "/api/run", json={"func_name": "calculate", "inputs": {"a": "invalid", "b": 5.0, "operation": "add"}}
+        "/api/run",
+        json={
+            "func_name": "calculate",
+            "inputs": {"a": "invalid", "b": 5.0, "operation": "add"},
+        },
     )
 
     # Should create a task, but task will fail
     assert response.status_code == 200
     task_id = response.json()["task_id"]
-    
+
     # Wait for task to fail
     for _ in range(10):
         time.sleep(0.1)
