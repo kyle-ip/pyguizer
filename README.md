@@ -4,7 +4,6 @@
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
 ![Documentation](https://img.shields.io/badge/Docs-Read%20the%20Docs-blue)
-![MVP](https://img.shields.io/badge/MVP-Complete-success)
 
 Automatically generate interactive, production-ready web GUI applications from standard Python function signatures and type hints. PyGUIzer bridges the gap between Python's powerful backend logic and accessible user interfaces, enabling rapid prototyping and deployment with zero frontend code.
 
@@ -110,26 +109,6 @@ python -m pyguizer run app.py
 ```
 
 Open your browser to `http://localhost:8000` to see your generated GUI!
-
-## 🧪 Testing
-
-PyGUIzer includes comprehensive test suites with 80%+ coverage:
-
-- **Unit Tests**: Test individual modules (introspection, widget generation, layout processing)
-- **Integration Tests**: Test complete API workflows and user interactions
-- **Regression Tests**: Ensure backward compatibility and prevent regressions
-- **Coverage**: Automated coverage reporting for both backend and frontend
-
-**Quick Start:**
-```bash
-# Backend tests
-pytest --cov=pyguizer --cov-report=html
-
-# Frontend tests
-cd frontend && npm test -- --coverage
-```
-
-For detailed testing documentation, see [TESTING.md](TESTING.md).
 
 ## 📖 Detailed Usage
 
@@ -383,63 +362,36 @@ cd ..
 
 ### Running Tests
 
-PyGUIzer includes comprehensive test suites for both backend and frontend:
-
-**Backend Tests:**
 ```bash
 # Run all tests
-pytest
+python -m pytest
 
-# Run with coverage report
-pytest --cov=pyguizer --cov-report=html
-
-# Run specific test categories
-pytest -m unit          # Unit tests only
-pytest -m integration   # Integration tests only
-pytest -m regression    # Regression tests only
-pytest -m core          # Core functionality tests
-pytest -m api           # API endpoint tests
-
-# Run specific test file
-pytest tests/test_introspection_unit.py -v
-
-# View coverage report
-open htmlcov/index.html  # macOS
-start htmlcov/index.html  # Windows
+# Run specific test modules
+python -m pytest tests/test_core.py -v
+python -m pytest tests/verify_core.py -v
 ```
-
-**Frontend Tests:**
-```bash
-cd frontend
-
-# Run all tests
-npm test
-
-# Run with coverage
-npm run test:coverage
-
-# Watch mode for development
-npm run test:watch
-```
-
-**Test Coverage:**
-- Backend: 80%+ coverage target
-- Frontend: 80%+ coverage target
-- Critical paths: 100% coverage
-
-For detailed testing documentation, see [TESTING.md](TESTING.md) and [tests/README.md](tests/README.md).
 
 ### Code Quality
 
 ```bash
 # Format code with black
-black pyguizer/
+black pyguizer/ tests/ examples/
 
 # Sort imports with isort
-isort pyguizer/
+isort pyguizer/ tests/ examples/
 
 # Check with flake8
-flake8 pyguizer/
+flake8 pyguizer/ tests/
+
+# Remove unused imports and variables
+autoflake --remove-all-unused-imports --remove-unused-variables --in-place -r pyguizer/ tests/ examples/
+
+# Run PyLint for code quality analysis
+pylint pyguizer/ tests/ examples/
+
+# Frontend: Lint and auto-fix
+cd frontend
+npm run lint -- --fix
 ```
 
 ### Building the Frontend
@@ -449,22 +401,45 @@ cd frontend
 npm run build
 ```
 
+## 🔄 CI/CD Pipeline
+
+PyGUIzer uses an automated CI/CD pipeline that runs on every push and pull request:
+
+### Security Scanning
+- **Bandit**: Scans Python code for security vulnerabilities
+- **pip-audit**: Audits Python dependencies for known CVEs
+- **npm audit**: Audits frontend dependencies for vulnerabilities
+- Weekly scheduled vulnerability scans
+
+### Code Quality & Refactoring
+- **Automatic fixes**: black, isort, autoflake, ESLint
+- **PyLint**: Code quality analysis with configurable thresholds
+- **Auto-commit**: Code quality fixes are automatically committed to PR branches
+
+### Testing
+- **Unit tests**: Fast, isolated component tests
+- **Integration tests**: Complete workflow and API endpoint tests
+- **Regression tests**: Backward compatibility verification
+- **Multi-version**: Tests run on Python 3.8, 3.9, 3.10, 3.11, and 3.12
+- **Frontend tests**: Unit and integration tests for React components
+- **Coverage**: Reports uploaded to Codecov
+
+### Deployment
+- **GitHub Pages**: Automatically deploys demos on merge to `main`
+- **PyPI**: Automatically publishes to PyPI on merge to `main` (if configured)
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for more details on the development workflow.
+
 ## 🚀 Roadmap
 
-### ✅ Completed (MVP - Minimum Viable Product)
+### ✅ Completed (Phase 2 - POC)
 
-**Core Features:**
 1. **Advanced Type Support**: 15+ parameter types including UUID, Decimal, Date, Time, Set, Tuple, FrozenSet, and dataclasses
 2. **Enhanced Custom Widget Registry**: Support for direct, inheritance-based, and string-based mappings
 3. **Preset Management System**: Full CRUD operations with UI integration
 4. **Markdown Rendering Support**: Comprehensive formatting for rich output display
 5. **Real-time WebSocket Communication**: Task updates and bidirectional communication
 6. **Comprehensive Task Management**: Asynchronous execution with status tracking
-7. **Multi-Function Support**: Register and execute multiple functions independently
-8. **Comprehensive Testing**: Unit, integration, and regression tests with 80%+ coverage
-9. **Enhanced Layout System**: Support for sections, tabs, accordions, and grid layouts
-
-**MVP Status:** ✅ **COMPLETE** - All core functionality implemented and tested
 
 ### 📅 Phase 3 - Production Ready
 
@@ -487,7 +462,7 @@ npm run build
 #### Developer Experience
 11. **Improved CLI Tools**: Project scaffolding, building, deployment
 12. **Comprehensive Documentation**: Tutorials and use cases
-13. **Testing Framework**: ✅ Comprehensive testing for both backend and frontend (Unit, Integration, Regression tests with 80%+ coverage)
+13. **Testing Framework**: Comprehensive testing for both backend and frontend
 
 ## 🤝 Contributing
 
@@ -504,8 +479,6 @@ PyGUIzer is licensed under the MIT License. See the [LICENSE](LICENSE) file for 
 ## 📞 Support
 
 - **Documentation**: [docs/](docs/)
-- **Testing Guide**: [TESTING.md](TESTING.md)
-- **Contributing**: [CONTRIBUTING.md](CONTRIBUTING.md)
 - **Issues**: [GitHub Issues](https://github.com/kyle-ip/pyguizer/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/kyle-ip/pyguizer/discussions)
 - **Source Code**: [GitHub Repository](https://github.com/kyle-ip/pyguizer)

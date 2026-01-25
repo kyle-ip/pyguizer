@@ -92,74 +92,41 @@ We accept pull requests for bug fixes, feature enhancements, and documentation i
 
 ### Running Tests
 
-PyGUIzer has comprehensive test suites covering unit tests, integration tests, and regression tests.
-
-**Backend Tests:**
 ```bash
 # Run all tests
-pytest
+python -m pytest
 
-# Run with coverage report
-pytest --cov=pyguizer --cov-report=html --cov-report=term-missing
+# Run specific test modules
+python -m pytest tests/test_core.py -v
+python -m pytest tests/verify_core.py -v
 
-# Run specific test categories
-pytest -m unit          # Unit tests only
-pytest -m integration   # Integration tests only
-pytest -m regression    # Regression tests only
-pytest -m core          # Core functionality tests
-pytest -m api           # API endpoint tests
-
-# Run specific test file
-pytest tests/test_introspection_unit.py -v
-
-# Run with verbose output and stop on first failure
-pytest -v -x
-
-# View HTML coverage report
-open htmlcov/index.html  # macOS
-start htmlcov/index.html  # Windows
+# Run tests with coverage
+python -m pytest --cov=pyguizer
 ```
-
-**Frontend Tests:**
-```bash
-cd frontend
-
-# Run all tests
-npm test
-
-# Run with coverage
-npm run test:coverage
-
-# Watch mode for development
-npm run test:watch
-
-# Run specific test file
-npm test -- App.test.tsx
-```
-
-**Test Structure:**
-- **Unit Tests**: Test individual modules (`test_*_unit.py`)
-- **Integration Tests**: Test complete workflows (`test_api_integration.py`)
-- **Regression Tests**: Ensure backward compatibility (`test_regression.py`)
-- **Frontend Tests**: Component and integration tests
-
-For more details, see [TESTING.md](TESTING.md) and [tests/README.md](tests/README.md).
 
 ### Code Quality
 
 ```bash
 # Format code with black
-black pyguizer/
+black pyguizer/ tests/ examples/
 
 # Sort imports with isort
-isort pyguizer/
+isort pyguizer/ tests/ examples/
 
 # Check with flake8
-flake8 pyguizer/
+flake8 pyguizer/ tests/
+
+# Remove unused imports and variables with autoflake
+autoflake --remove-all-unused-imports --remove-unused-variables --in-place -r pyguizer/ tests/ examples/
+
+# Run PyLint for code quality analysis
+pylint pyguizer/ tests/ examples/
 
 # Run all checks at once
-black pyguizer/ && isort pyguizer/ && flake8 pyguizer/
+black pyguizer/ tests/ examples/ && isort pyguizer/ tests/ examples/ && flake8 pyguizer/ tests/
 ```
+
+**Note**: The CI/CD pipeline automatically runs these tools and fixes issues when you create a pull request. Code quality fixes are automatically committed back to your PR branch.
 
 ## Project Structure
 
@@ -217,11 +184,22 @@ Common types include:
 2. Create a new branch from `main`
 3. Make your changes
 4. Write tests for your changes
-5. Ensure all tests pass
+5. Ensure all tests pass locally
 6. Update documentation as needed
 7. Submit a pull request to the `main` branch
-8. Wait for code review and address any feedback
-9. Once approved, your PR will be merged
+8. **CI/CD Pipeline**: The automated pipeline will:
+   - Scan for security vulnerabilities (Bandit, pip-audit, npm audit)
+   - Automatically fix code quality issues (black, isort, autoflake, ESLint)
+   - Run PyLint for code quality analysis
+   - Run unit, integration, and regression tests across Python 3.8-3.12
+   - Run frontend unit and integration tests
+   - Build the frontend and Python package
+   - Auto-commit code quality fixes to your PR branch
+9. Wait for code review and address any feedback
+10. Once approved, your PR will be merged
+11. On merge to `main`, the pipeline will:
+    - Deploy the demo to GitHub Pages (including examples)
+    - Publish to PyPI (if configured)
 
 ## Style Guide
 
@@ -246,47 +224,21 @@ Common types include:
 
 ## Testing
 
-PyGUIzer maintains comprehensive test coverage. When contributing:
+- Write unit tests for core functionality
+- Write integration tests for API endpoints
+- Test edge cases and error conditions
+- Aim for high test coverage (target: 80%+)
 
-### Test Requirements
+### CI/CD Testing
 
-1. **Write tests for new features**: All new functionality must include tests
-2. **Update tests for changes**: When modifying existing code, update relevant tests
-3. **Test edge cases**: Include tests for error conditions and boundary cases
-4. **Maintain coverage**: Aim for 80%+ coverage, 100% for critical paths
+The CI/CD pipeline automatically runs:
+- **Unit tests**: Fast, isolated tests for individual components
+- **Integration tests**: Tests for complete workflows and API endpoints
+- **Regression tests**: Ensures backward compatibility
+- **Frontend tests**: Unit and integration tests for React components
+- **Multi-version testing**: Tests run on Python 3.8, 3.9, 3.10, 3.11, and 3.12
 
-### Test Categories
-
-- **Unit Tests** (`-m unit`): Test individual functions and modules
-- **Integration Tests** (`-m integration`): Test complete workflows and API endpoints
-- **Regression Tests** (`-m regression`): Ensure backward compatibility
-
-### Test Files
-
-**Backend:**
-- `test_introspection_unit.py` - Function introspection tests
-- `test_widget_unit.py` - Widget generation tests
-- `test_layout_unit.py` - Layout processing tests
-- `test_api_integration.py` - API endpoint integration tests
-- `test_regression.py` - Regression tests
-
-**Frontend:**
-- `App.test.tsx` - Main App component tests
-- `App.integration.test.tsx` - Integration tests
-- `WidgetFactory.test.tsx` - Widget factory tests
-- `api.test.ts` - API service tests
-
-### Running Tests Before Submitting
-
-```bash
-# Backend: Ensure all tests pass
-pytest --cov=pyguizer --cov-fail-under=80
-
-# Frontend: Ensure all tests pass
-cd frontend && npm test -- --coverage --watchAll=false
-```
-
-See [TESTING.md](TESTING.md) for detailed testing guidelines.
+All tests must pass before a PR can be merged. Coverage reports are uploaded to Codecov.
 
 ## License
 
