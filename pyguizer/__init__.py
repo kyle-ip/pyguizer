@@ -22,7 +22,13 @@ class PyGUIzer:
         return func
 
     @classmethod
-    def run(cls, host="0.0.0.0", port=8000, title="PyGUIzer App", description="Multi-function PyGUIzer Application"):
+    def run(
+        cls,
+        host="0.0.0.0",
+        port=8000,
+        title="PyGUIzer App",
+        description="Multi-function PyGUIzer Application",
+    ):
         """
         Run the PyGUIzer application with all registered functions.
 

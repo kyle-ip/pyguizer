@@ -14,19 +14,22 @@ This example demonstrates all core features of PyGUIzer:
 Real-life use case: Project Management Dashboard for a software development team
 """
 
-from typing import List, Dict, Set, Tuple, Optional, Any
-from enum import Enum
 from dataclasses import dataclass
-from datetime import date, time, datetime
+from datetime import date, datetime, time
 from decimal import Decimal
-from uuid import UUID, uuid4
+from enum import Enum
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Set, Tuple
+from uuid import UUID, uuid4
+
 from pyguizer import PyGUIzer
 
 # --- Custom Types & Enums for our project management system ---
 
+
 class TaskStatus(Enum):
     """Status of a project task"""
+
     TODO = "Todo"
     IN_PROGRESS = "In Progress"
     REVIEW = "Review"
@@ -36,6 +39,7 @@ class TaskStatus(Enum):
 
 class Priority(Enum):
     """Priority levels for tasks"""
+
     LOW = "Low"
     MEDIUM = "Medium"
     HIGH = "High"
@@ -44,6 +48,7 @@ class Priority(Enum):
 
 class Department(Enum):
     """Company departments"""
+
     ENGINEERING = "Engineering"
     DESIGN = "Design"
     MARKETING = "Marketing"
@@ -54,6 +59,7 @@ class Department(Enum):
 @dataclass
 class TeamMember:
     """Represents a team member"""
+
     id: UUID
     name: str
     email: str
@@ -65,6 +71,7 @@ class TeamMember:
 @dataclass
 class Task:
     """Represents a project task"""
+
     id: UUID
     title: str
     description: str
@@ -84,16 +91,10 @@ layout_config = {
     "sections": [
         {
             "name": "Task Basics",
-            "widgets": ["title", "description", "status", "priority"]
+            "widgets": ["title", "description", "status", "priority"],
         },
-        {
-            "name": "Timeline",
-            "widgets": ["start_date", "end_date", "estimated_hours"]
-        },
-        {
-            "name": "Assignment",
-            "widgets": ["assignee_id", "tags"]
-        }
+        {"name": "Timeline", "widgets": ["start_date", "end_date", "estimated_hours"]},
+        {"name": "Assignment", "widgets": ["assignee_id", "tags"]},
     ]
 }
 
@@ -117,12 +118,12 @@ def create_task(
     end_date: date = None,
     estimated_hours: float = 8.0,
     tags: Set[str] = None,
-    dependencies: List[UUID] = None
+    dependencies: List[UUID] = None,
 ) -> Dict[str, Any]:
     """Create a new project task with detailed information."""
     # Generate a random UUID if not provided
     task_id = uuid4()
-    
+
     # Simulate creating task in database
     task = {
         "id": task_id,
@@ -137,13 +138,13 @@ def create_task(
         "actual_hours": 0.0,
         "tags": tags or set(),
         "dependencies": dependencies or [],
-        "created_at": datetime.now().isoformat()
+        "created_at": datetime.now().isoformat(),
     }
-    
+
     return {
         "success": True,
         "message": f"Task '{title}' created successfully!",
-        "task": task
+        "task": task,
     }
 
 
@@ -153,16 +154,20 @@ def assign_team_members(
     task_id: UUID,
     team_members: List[UUID],
     roles: Dict[UUID, str],
-    allocation_percentages: Dict[UUID, float] = None
+    allocation_percentages: Dict[UUID, float] = None,
 ) -> str:
     """Assign multiple team members to a task with specific roles and allocation percentages."""
     # Simulate assignment logic
     assignments = []
     for member_id in team_members:
         role = roles.get(member_id, "Team Member")
-        allocation = allocation_percentages.get(member_id, 100.0) if allocation_percentages else 100.0
+        allocation = (
+            allocation_percentages.get(member_id, 100.0)
+            if allocation_percentages
+            else 100.0
+        )
         assignments.append(f"- {member_id}: {role} ({allocation}%)")
-    
+
     # Generate markdown output
     return f"""
 # Team Assignment for Task {task_id}
@@ -184,17 +189,24 @@ def plan_timeline(
     start_date: date,
     end_date: date,
     milestones: Dict[date, str],
-    resource_allocations: Dict[str, List[Tuple[date, date]]]
+    resource_allocations: Dict[str, List[Tuple[date, date]]],
 ) -> str:
     """Create a comprehensive project timeline with milestones and resource allocations."""
     # Generate timeline report in markdown
-    milestone_list = "\n".join([f"- {date.isoformat()}: {description}" for date, description in sorted(milestones.items())])
-    
+    milestone_list = "\n".join(
+        [
+            f"- {date.isoformat()}: {description}"
+            for date, description in sorted(milestones.items())
+        ]
+    )
+
     resource_list = []
     for resource, allocations in resource_allocations.items():
-        alloc_text = "\n  ".join([f"{start.isoformat()} → {end.isoformat()}" for start, end in allocations])
+        alloc_text = "\n  ".join(
+            [f"{start.isoformat()} → {end.isoformat()}" for start, end in allocations]
+        )
         resource_list.append(f"- **{resource}**:\n  {alloc_text}")
-    
+
     return f"""
 # 📅 Project Timeline: {project_name}
 
@@ -221,26 +233,31 @@ def track_budget(
     budget: Decimal,
     expenses: List[Dict[str, Any]],
     contingency_percentage: float = 10.0,
-    forecast_months: int = 3
+    forecast_months: int = 3,
 ) -> Dict[str, Any]:
     """Track project budget with expenses, contingencies, and forecasts."""
     # Calculate total expenses
     total_expenses = sum(Decimal(expense.get("amount", 0)) for expense in expenses)
-    
+
     # Calculate contingency amount
     contingency = budget * Decimal(contingency_percentage / 100)
-    
+
     # Calculate remaining budget
     remaining = budget - total_expenses - contingency
-    
+
     # Generate forecast
-    monthly_average = total_expenses / Decimal(forecast_months) if forecast_months > 0 else Decimal(0)
+    monthly_average = (
+        total_expenses / Decimal(forecast_months) if forecast_months > 0 else Decimal(0)
+    )
     forecast = {
         "monthly_average": float(monthly_average),
-        "forecasted_total": float(total_expenses + monthly_average * Decimal(forecast_months)),
-        "will_overrun": (total_expenses + monthly_average * Decimal(forecast_months)) > budget
+        "forecasted_total": float(
+            total_expenses + monthly_average * Decimal(forecast_months)
+        ),
+        "will_overrun": (total_expenses + monthly_average * Decimal(forecast_months))
+        > budget,
     }
-    
+
     return {
         "project_id": str(project_id),
         "total_budget": float(budget),
@@ -250,7 +267,7 @@ def track_budget(
         "utilization_rate": float(total_expenses / budget * 100) if budget > 0 else 0,
         "forecast": forecast,
         "expense_count": len(expenses),
-        "status": "Over budget!" if remaining < 0 else "On track!"
+        "status": "Over budget!" if remaining < 0 else "On track!",
     }
 
 
@@ -261,17 +278,20 @@ def generate_project_report(
     include_tasks: bool = True,
     include_budget: bool = True,
     include_team: bool = True,
-    detailed: bool = False
+    detailed: bool = False,
 ) -> str:
     """Generate a comprehensive project report with markdown formatting."""
     # Simulate fetching project data
     project_name = f"Project Alpha"
     project_start = date(2024, 1, 1)
     project_end = date(2024, 6, 30)
-    
+
     # Generate report sections
-    report = [f"# 📊 Project Report: {project_name}", f"*Report generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*"]
-    
+    report = [
+        f"# 📊 Project Report: {project_name}",
+        f"*Report generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*",
+    ]
+
     report.append(f"""
 ## Project Overview
 | Metric | Value |
@@ -281,7 +301,7 @@ def generate_project_report(
 | Duration | {project_start.isoformat()} to {project_end.isoformat()} |
 | Progress | 65% |
 """)
-    
+
     if include_tasks:
         report.append(f"""
 ## Task Summary
@@ -294,7 +314,7 @@ def generate_project_report(
 | Blocked | 2 | 3% |
 | **Total** | **60** | **100%** |
 """)
-    
+
     if include_budget:
         report.append(f"""
 ## Budget Overview
@@ -305,7 +325,7 @@ def generate_project_report(
 | Marketing | $10,000 | $8,500 | -$1,500 |
 | **Total** | **$75,000** | **$53,800** | **-$21,200** |
 """)
-    
+
     if include_team:
         report.append(f"""
 ## Team Members
@@ -315,7 +335,7 @@ def generate_project_report(
 - 🔧 Sarah Wilson (DevOps Engineer)
 - 📱 Alex Brown (Mobile Developer)
 """)
-    
+
     if detailed:
         report.append(f"""
 ## Detailed Analysis
@@ -335,12 +355,12 @@ def generate_project_report(
 2. 📌 Implement weekly stakeholder sync meetings
 3. 📌 Adopt agile methodologies for faster iterations
 """)
-    
+
     report.append(f"""
 ---
 *Report generated by PyGUIzer Project Management Dashboard*
 """)
-    
+
     return "\n".join(report)
 
 
@@ -350,19 +370,21 @@ def upload_project_files(
     project_id: UUID,
     files: List[Path],
     tags: Set[str] = None,
-    overwrite_existing: bool = False
+    overwrite_existing: bool = False,
 ) -> Dict[str, Any]:
     """Upload multiple files to a project with tags and metadata."""
     # Simulate file upload process
     uploaded_files = []
     for file_path in files:
-        uploaded_files.append({
-            "name": file_path.name,
-            "size": f"{1 + len(file_path.name) * 100} KB",
-            "path": str(file_path),
-            "uploaded_at": datetime.now().isoformat()
-        })
-    
+        uploaded_files.append(
+            {
+                "name": file_path.name,
+                "size": f"{1 + len(file_path.name) * 100} KB",
+                "path": str(file_path),
+                "uploaded_at": datetime.now().isoformat(),
+            }
+        )
+
     return {
         "project_id": str(project_id),
         "uploaded_files": uploaded_files,
@@ -370,7 +392,7 @@ def upload_project_files(
         "tags": tags or set(),
         "overwrite_existing": overwrite_existing,
         "status": "success",
-        "message": f"Successfully uploaded {len(uploaded_files)} files to project {project_id}"
+        "message": f"Successfully uploaded {len(uploaded_files)} files to project {project_id}",
     }
 
 
@@ -379,14 +401,24 @@ def upload_project_files(
 def analyze_project_risks(
     project_id: UUID,
     identified_risks: List[Dict[str, Any]],
-    risk_threshold: float = 0.7
+    risk_threshold: float = 0.7,
 ) -> str:
     """Analyze project risks and provide mitigation strategies."""
     # Simulate risk analysis
-    high_risks = [risk for risk in identified_risks if risk.get("probability", 0.0) >= risk_threshold]
-    medium_risks = [risk for risk in identified_risks if 0.3 <= risk.get("probability", 0.0) < risk_threshold]
-    low_risks = [risk for risk in identified_risks if risk.get("probability", 0.0) < 0.3]
-    
+    high_risks = [
+        risk
+        for risk in identified_risks
+        if risk.get("probability", 0.0) >= risk_threshold
+    ]
+    medium_risks = [
+        risk
+        for risk in identified_risks
+        if 0.3 <= risk.get("probability", 0.0) < risk_threshold
+    ]
+    low_risks = [
+        risk for risk in identified_risks if risk.get("probability", 0.0) < 0.3
+    ]
+
     # Generate risk report
     report = [
         "# ⚠️ Project Risk Analysis Report",
@@ -399,26 +431,30 @@ def analyze_project_risks(
         f"| ✅ Low | {len(low_risks)} | {round(len(low_risks)/len(identified_risks)*100)}% |",
         f"| **Total** | {len(identified_risks)} | **100%** |",
         "",
-        "## Top Risks to Mitigate"
+        "## Top Risks to Mitigate",
     ]
-    
+
     for risk in high_risks[:3]:
-        report.extend([
-            f"### {risk['title']}",
-            f"- Probability: {risk['probability']:.2f}",
-            f"- Impact: {risk['impact']}",
-            f"- Mitigation: {risk.get('mitigation', 'None specified')}",
-            ""
-        ])
-    
-    report.extend([
-        "## Risk Management Recommendations",
-        "1. **For High Risks**: Implement immediate mitigation strategies and assign owners",
-        "2. **For Medium Risks**: Monitor closely and develop contingency plans",
-        "3. **For Low Risks**: Document and review periodically",
-        "4. **General**: Conduct weekly risk assessment meetings"
-    ])
-    
+        report.extend(
+            [
+                f"### {risk['title']}",
+                f"- Probability: {risk['probability']:.2f}",
+                f"- Impact: {risk['impact']}",
+                f"- Mitigation: {risk.get('mitigation', 'None specified')}",
+                "",
+            ]
+        )
+
+    report.extend(
+        [
+            "## Risk Management Recommendations",
+            "1. **For High Risks**: Implement immediate mitigation strategies and assign owners",
+            "2. **For Medium Risks**: Monitor closely and develop contingency plans",
+            "3. **For Low Risks**: Document and review periodically",
+            "4. **General**: Conduct weekly risk assessment meetings",
+        ]
+    )
+
     return "\n".join(report)
 
 
@@ -429,14 +465,14 @@ if __name__ == "__main__":
     print("\n📋 Available Functions:")
     for func in pyguizer.registered_functions:
         print(f"  - {func.__name__}: {func.__doc__.splitlines()[0]}")
-    
+
     print("\n🌐 Access the application at: http://localhost:8080")
     print("\nPress Ctrl+C to stop the server")
     print("=" * 70)
-    
+
     # Run the PyGUIzer application
     pyguizer.run(
         title="Project Management Dashboard",
         description="Comprehensive project management dashboard with multiple functions",
-        port=8080
+        port=8080,
     )
