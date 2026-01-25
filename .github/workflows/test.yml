@@ -33,7 +33,7 @@ jobs:
 
       - name: Run unit tests (fast, stop on first fail)
         run: |
-          pytest tests/ -v -x -k "not integration" --ignore=tests/test_regression.py --ignore=tests/test_api_integration.py -q
+          python -m pytest tests/ -v -x -k "not integration" --ignore=tests/test_regression.py --ignore=tests/test_api_integration.py -q
 
       - name: Set up Node.js
         uses: actions/setup-node@v4

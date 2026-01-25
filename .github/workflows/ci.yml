@@ -171,15 +171,15 @@ jobs:
 
       - name: Run unit tests
         run: |
-          pytest tests/ -v -k "not integration" --ignore=tests/test_regression.py --ignore=tests/test_api_integration.py --cov=pyguizer --cov-report=xml --cov-report=term-missing
+          python -m pytest tests/ -v -k "not integration" --ignore=tests/test_regression.py --ignore=tests/test_api_integration.py --cov=pyguizer --cov-report=xml --cov-report=term-missing
 
       - name: Run integration tests
         run: |
-          pytest tests/test_api_integration.py -v -m integration --cov=pyguizer --cov-report=xml --cov-report=term-missing --cov-append
+          python -m pytest tests/test_api_integration.py -v -m integration --cov=pyguizer --cov-report=xml --cov-report=term-missing --cov-append
 
       - name: Run regression tests
         run: |
-          pytest tests/test_regression.py -v --cov=pyguizer --cov-report=xml --cov-report=term-missing --cov-append
+          python -m pytest tests/test_regression.py -v --cov=pyguizer --cov-report=xml --cov-report=term-missing --cov-append
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
