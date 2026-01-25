@@ -12,7 +12,7 @@ on:
   pull_request:
     branches: [main, feat/test_automation]
   schedule:
-    - cron: "0 0 0 * *"  # Daily vulnerability scan
+    - cron: "0 0 0 * * *"  # Daily vulnerability scan
 
 env:
   PYTHON_VERSION: "3.11"
