@@ -19,7 +19,8 @@ class TestIntrospectionBasic:
 
         result = introspect_function(simple_func)
 
-        assert result["name"] == "Simple Func"
+        assert result["name"] == "simple_func"
+        assert result["display_name"] == "Simple Func"
         assert result["docstring"] == "Simple test function."
         assert result["return_type"] == bool
         assert len(result["parameters"]) == 2
@@ -94,7 +95,8 @@ class TestIntrospectionBasic:
             """Test function."""
 
         result = introspect_function(snake_case_function_name)
-        assert result["name"] == "Snake Case Function Name"
+        assert result["name"] == "snake_case_function_name"
+        assert result["display_name"] == "Snake Case Function Name"
 
     def test_function_with_no_parameters(self):
         """Test introspection of function with no parameters."""
@@ -151,7 +153,8 @@ class TestIntrospectionEdgeCases:
 
         inner_func = outer()
         result = introspect_function(inner_func)
-        assert result["name"] == "Inner"
+        assert result["name"] == "inner"
+        assert result["display_name"] == "Inner"
         assert len(result["parameters"]) == 1
 
     def test_lambda_function(self):

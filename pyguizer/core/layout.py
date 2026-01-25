@@ -148,12 +148,11 @@ def process_layout(
         processed_container = process_container(container, is_first=(i == 0))
         ui_layout["containers"].append(processed_container)
 
-    # For backward compatibility, keep sections key if no containers specified
-    if "containers" not in layout_config and "sections" in layout_config:
-        ui_layout["sections"] = [
-            container
-            for container in ui_layout["containers"]
-            if container.get("type", "section") == "section"
-        ]
+    # For backward compatibility, always expose section-type containers as "sections"
+    ui_layout["sections"] = [
+        container
+        for container in ui_layout["containers"]
+        if container.get("type", "section") == "section"
+    ]
 
     return ui_layout

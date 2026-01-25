@@ -1,5 +1,7 @@
 """Unit tests for function introspection functionality."""
 
+from typing import Any
+
 from pyguizer.core.introspection import introspect_function
 
 
@@ -70,8 +72,8 @@ def test_introspect_function_without_type_hints():
     result = introspect_function(sample_func)
 
     assert len(result["parameters"]) == 2
-    assert result["parameters"][0]["type"] is object  # Any type
-    assert result["parameters"][1]["type"] is object
+    assert result["parameters"][0]["type"] is Any
+    assert result["parameters"][1]["type"] is Any
 
 
 def test_introspect_function_without_docstring():

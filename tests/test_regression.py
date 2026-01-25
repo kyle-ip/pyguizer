@@ -34,7 +34,8 @@ class TestRegressionCore:
 
         result = introspect_function(sample_func)
 
-        assert result["name"] == "Sample Func"
+        assert result["name"] == "sample_func"
+        assert result["display_name"] == "Sample Func"
         assert len(result["parameters"]) == 2
         assert result["return_type"] == bool
 

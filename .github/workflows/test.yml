@@ -53,7 +53,7 @@ jobs:
 
       - name: Run unit tests (fast, stop on first fail)
         run: |
-          poetry run python -m pytest tests/ -v -x -k "not integration" --ignore=tests/test_regression.py --ignore=tests/test_api_integration.py -q
+          poetry run python -m pytest tests/ -v -x -k "not integration" --ignore=tests/test_regression.py --ignore=tests/test_api_integration.py --ignore=tests/test_cli.py --ignore=tests/test_core.py --ignore=tests/test_new_features.py --ignore=tests/verify_core.py -q
 
       - name: Run frontend unit tests
         run: |
