@@ -375,23 +375,13 @@ python -m pytest tests/verify_core.py -v
 
 ```bash
 # Format code with black
-black pyguizer/ tests/ examples/
+black pyguizer/
 
 # Sort imports with isort
-isort pyguizer/ tests/ examples/
+isort pyguizer/
 
 # Check with flake8
-flake8 pyguizer/ tests/
-
-# Remove unused imports and variables
-autoflake --remove-all-unused-imports --remove-unused-variables --in-place -r pyguizer/ tests/ examples/
-
-# Run PyLint for code quality analysis
-pylint pyguizer/ tests/ examples/
-
-# Frontend: Lint and auto-fix
-cd frontend
-npm run lint -- --fix
+flake8 pyguizer/
 ```
 
 ### Building the Frontend
@@ -400,35 +390,6 @@ npm run lint -- --fix
 cd frontend
 npm run build
 ```
-
-## 🔄 CI/CD Pipeline
-
-PyGUIzer uses an automated CI/CD pipeline that runs on every push and pull request:
-
-### Security Scanning
-- **Bandit**: Scans Python code for security vulnerabilities
-- **pip-audit**: Audits Python dependencies for known CVEs
-- **npm audit**: Audits frontend dependencies for vulnerabilities
-- Weekly scheduled vulnerability scans
-
-### Code Quality & Refactoring
-- **Automatic fixes**: black, isort, autoflake, ESLint
-- **PyLint**: Code quality analysis with configurable thresholds
-- **Auto-commit**: Code quality fixes are automatically committed to PR branches
-
-### Testing
-- **Unit tests**: Fast, isolated component tests
-- **Integration tests**: Complete workflow and API endpoint tests
-- **Regression tests**: Backward compatibility verification
-- **Multi-version**: Tests run on Python 3.8, 3.9, 3.10, 3.11, and 3.12
-- **Frontend tests**: Unit and integration tests for React components
-- **Coverage**: Reports uploaded to Codecov
-
-### Deployment
-- **GitHub Pages**: Automatically deploys demos on merge to `main`
-- **PyPI**: Automatically publishes to PyPI on merge to `main` (if configured)
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for more details on the development workflow.
 
 ## 🚀 Roadmap
 

@@ -108,25 +108,17 @@ python -m pytest --cov=pyguizer
 
 ```bash
 # Format code with black
-black pyguizer/ tests/ examples/
+black pyguizer/
 
 # Sort imports with isort
-isort pyguizer/ tests/ examples/
+isort pyguizer/
 
 # Check with flake8
-flake8 pyguizer/ tests/
-
-# Remove unused imports and variables with autoflake
-autoflake --remove-all-unused-imports --remove-unused-variables --in-place -r pyguizer/ tests/ examples/
-
-# Run PyLint for code quality analysis
-pylint pyguizer/ tests/ examples/
+flake8 pyguizer/
 
 # Run all checks at once
-black pyguizer/ tests/ examples/ && isort pyguizer/ tests/ examples/ && flake8 pyguizer/ tests/
+black pyguizer/ && isort pyguizer/ && flake8 pyguizer/
 ```
-
-**Note**: The CI/CD pipeline automatically runs these tools and fixes issues when you create a pull request. Code quality fixes are automatically committed back to your PR branch.
 
 ## Project Structure
 
@@ -184,22 +176,11 @@ Common types include:
 2. Create a new branch from `main`
 3. Make your changes
 4. Write tests for your changes
-5. Ensure all tests pass locally
+5. Ensure all tests pass
 6. Update documentation as needed
 7. Submit a pull request to the `main` branch
-8. **CI/CD Pipeline**: The automated pipeline will:
-   - Scan for security vulnerabilities (Bandit, pip-audit, npm audit)
-   - Automatically fix code quality issues (black, isort, autoflake, ESLint)
-   - Run PyLint for code quality analysis
-   - Run unit, integration, and regression tests across Python 3.8-3.12
-   - Run frontend unit and integration tests
-   - Build the frontend and Python package
-   - Auto-commit code quality fixes to your PR branch
-9. Wait for code review and address any feedback
-10. Once approved, your PR will be merged
-11. On merge to `main`, the pipeline will:
-    - Deploy the demo to GitHub Pages (including examples)
-    - Publish to PyPI (if configured)
+8. Wait for code review and address any feedback
+9. Once approved, your PR will be merged
 
 ## Style Guide
 
@@ -227,18 +208,7 @@ Common types include:
 - Write unit tests for core functionality
 - Write integration tests for API endpoints
 - Test edge cases and error conditions
-- Aim for high test coverage (target: 80%+)
-
-### CI/CD Testing
-
-The CI/CD pipeline automatically runs:
-- **Unit tests**: Fast, isolated tests for individual components
-- **Integration tests**: Tests for complete workflows and API endpoints
-- **Regression tests**: Ensures backward compatibility
-- **Frontend tests**: Unit and integration tests for React components
-- **Multi-version testing**: Tests run on Python 3.8, 3.9, 3.10, 3.11, and 3.12
-
-All tests must pass before a PR can be merged. Coverage reports are uploaded to Codecov.
+- Aim for high test coverage
 
 ## License
 
