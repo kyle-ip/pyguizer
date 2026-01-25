@@ -38,6 +38,7 @@ pytest = "^7.4.3"
 black = "^23.11.0"
 isort = "^5.12.0"
 flake8 = "^6.1.0"
+flake8-pyproject = "^1.2.3"  # Enable flake8 to read pyproject.toml config
 httpx = "^0.25.2"
 pytest-cov = "^4.1.0"
 pytest-mock = "^3.12.0"
