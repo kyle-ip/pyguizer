@@ -1,7 +1,5 @@
 """Comprehensive unit tests for the layout module."""
 
-
-
 from pyguizer.core.layout import process_layout
 
 

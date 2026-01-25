@@ -7,8 +7,8 @@ import uvicorn
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Import our PyGUIzer components
-from pyguizer import PyGUIzer
-from pyguizer.api.app import create_app
+from pyguizer import PyGUIzer  # noqa: E402
+from pyguizer.api.app import create_app  # noqa: E402
 
 
 # Define a sample function

@@ -156,7 +156,7 @@ class TestIntrospectionEdgeCases:
 
     def test_lambda_function(self):
         """Test introspection of lambda function."""
-        lambda_func = lambda x: x * 2
+        lambda_func = lambda x: x * 2  # noqa: E731
         result = introspect_function(lambda_func)
         assert len(result["parameters"]) == 1
 

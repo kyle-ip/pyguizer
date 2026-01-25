@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 Test script to verify layout enhancements for Phase 3 development.
-This script tests the new layout processing functionality without requiring all dependencies.
+This script tests the new layout processing functionality without
+requiring all dependencies.
 """
 
 import os
@@ -10,7 +11,7 @@ import sys
 # Add the project root to the Python path
 sys.path.insert(0, os.path.abspath("."))
 
-from pyguizer.core.layout import process_layout
+from pyguizer.core.layout import process_layout  # noqa: E402
 
 
 def test_basic_section_layout():
@@ -71,8 +72,9 @@ def test_tabs_layout():
     assert result["containers"][0]["tabs"][0]["name"] == "Tab 1"
     assert result["containers"][0]["tabs"][1]["name"] == "Tab 2"
 
-    # Verify all widgets are included (param3 should be in first tab due to being unassigned)
-    assert len(result["containers"][0]["tabs"][0]["widgets"]) == 2  # param1 + param3
+    # Verify all widgets are included (unassigned param3 should be in first tab)
+    first_tab_widgets = result["containers"][0]["tabs"][0]["widgets"]
+    assert len(first_tab_widgets) == 2  # param1 + param3
 
     print("✓ Tabs layout test passed!")
     print()

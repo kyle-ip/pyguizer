@@ -9,8 +9,10 @@ from typing import Dict, List, Optional
 # Add the project root to Python path
 sys.path.insert(0, ".")
 
-from pyguizer.core.introspection import introspect_function
-from pyguizer.core.widget import WidgetType, generate_wso, register_widget_mapping
+from pyguizer.core.introspection import introspect_function  # noqa: E402
+from pyguizer.core.widget import (  # noqa: E402
+    WidgetType, generate_wso, register_widget_mapping
+)
 
 
 # Test Enum for widget mapping
@@ -53,7 +55,6 @@ class CustomType:
     """Custom type for testing widget registry"""
 
 
-
 def custom_widget_generator(py_type):
     """Custom widget generator for CustomType"""
     return WidgetType.TEXT, {"placeholder": "Custom type input"}
@@ -65,9 +66,8 @@ print("🔍 Testing PyGUIzer New Features...\n")
 print("1. Testing function introspection with advanced types...")
 try:
     func_info = introspect_function(test_function)
-    print(
-        f"   ✅ Introspection successful! Found {len(func_info['parameters'])} parameters"
-    )
+    param_count = len(func_info['parameters'])
+    print(f"   ✅ Introspection successful! Found {param_count} parameters")
 
     # Print parameter details
     for param in func_info["parameters"]:
@@ -131,12 +131,13 @@ try:
     custom_func_info = introspect_function(custom_type_function)
     custom_wsos = generate_wso(custom_func_info["parameters"])
 
-    if custom_wsos[0]["type"] == WidgetType.TEXT:
+    actual_type = custom_wsos[0]["type"]
+    if actual_type == WidgetType.TEXT:
         print("   ✅ Custom type correctly mapped to text widget")
     else:
-        print(
-            f"   ❌ Custom type mapping failed: Expected text, got {custom_wsos[0]['type']}"
-        )
+        expected_type = WidgetType.TEXT
+        print(f"   ❌ Custom mapping failed: Expected {expected_type}, "
+              f"got {actual_type}")
 
 except Exception as e:
     print(f"   ❌ Custom widget registry failed: {e}")
