@@ -11,23 +11,89 @@ export interface WidgetSpec {
   };
 }
 
-// Section definition
-export interface Section {
+// Base container interface
+export interface BaseContainer {
+  name?: string;
+  widgets: WidgetSpec[];
+  content?: Container[];
+}
+
+// Section container
+export interface Section extends BaseContainer {
+  type?: 'section';
+}
+
+// Tabs container
+export interface Tab {
   name: string;
   widgets: WidgetSpec[];
+  content?: Container[];
 }
+
+export interface TabsContainer extends BaseContainer {
+  type: 'tabs';
+  tabs: Tab[];
+}
+
+// Accordion container
+export interface AccordionItem {
+  name: string;
+  widgets: WidgetSpec[];
+  content?: Container[];
+}
+
+export interface AccordionContainer extends BaseContainer {
+  type: 'accordion';
+  items: AccordionItem[];
+}
+
+// Grid container
+export interface GridColumn {
+  widgets: WidgetSpec[];
+  content?: Container[];
+}
+
+export interface GridRow {
+  columns: GridColumn[];
+}
+
+export interface GridContainer extends BaseContainer {
+  type: 'grid';
+  rows: GridRow[];
+}
+
+// Union type for all container types
+export type Container = Section | TabsContainer | AccordionContainer | GridContainer;
 
 // Application specification
 export interface AppSpec {
   name: string;
   description: string;
+  functions: FunctionInfo[];
+}
+
+// Function output information
+export interface FunctionOutput {
+  name: string;
+  type: string;
+  description?: string;
+}
+
+// Function information
+export interface FunctionInfo {
+  name: string;
+  display_name: string;
+  description: string;
+  outputs?: FunctionOutput[];
   layout: {
-    sections: Section[];
+    sections?: Section[];
+    containers: Container[];
   };
 }
 
 // Run request
 export interface RunRequest {
+  func_name: string;
   inputs: Record<string, any>;
 }
 
@@ -74,4 +140,20 @@ export enum WidgetType {
   TIME = "time",
   DATETIME = "datetime",
   COLOR = "color"
+}
+
+// Preset types
+export interface Preset {
+  id: string;
+  name: string;
+  description?: string;
+  values: Record<string, any>;
+  created_at: number;
+  updated_at?: number;
+}
+
+export interface PresetCreate {
+  name: string;
+  description?: string;
+  values: Record<string, any>;
 }

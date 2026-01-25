@@ -1,14 +1,130 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { getAppSpec, runFunction, getTask, getPresets, createPreset, deletePreset, Preset, PresetCreate } from './services/api';
-import { AppSpec, Section, TaskStatus, WidgetSpec } from './types/index';
+import { 
+  getAppSpec, 
+  runFunction, 
+  getTask, 
+  getPresets, 
+  createPreset, 
+  deletePreset, 
+  Preset, 
+  PresetCreate 
+} from './services/api';
+import { 
+  AppSpec, 
+  Container, 
+  Section, 
+  TaskStatus, 
+  WidgetSpec, 
+  FunctionInfo
+} from './types/index';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
 import WidgetFactory from './components/WidgetFactory';
 
+// Container Renderer Component
+const ContainerRenderer: React.FC<{
+  container: Container;
+  inputs: Record<string, any>;
+  onChange: (id: string, value: any) => void;
+}> = ({ container, inputs, onChange }) => {
+  // Render widgets for this container
+  const renderWidgets = (widgets: WidgetSpec[]) => {
+    return widgets.map((widget: WidgetSpec) => (
+      <WidgetFactory
+        key={`widget-${widget.id}`}
+        widget={widget}
+        value={inputs[widget.id]}
+        onChange={onChange}
+      />
+    ));
+  };
+
+  // Render content (nested containers) for this container
+  const renderContent = (content?: Container[]) => {
+    if (!content || content.length === 0) return null;
+    
+    return content.map((nestedContainer, index) => (
+      <ContainerRenderer
+        key={`nested-${container.name}-${index}`}
+        container={nestedContainer}
+        inputs={inputs}
+        onChange={onChange}
+      />
+    ));
+  };
+
+  // Render based on container type
+  switch (container.type) {
+    case 'tabs':
+      return (
+        <div className="form-section tabs-container">
+          <div className="tabs">
+            {container.tabs?.map((tab) => (
+              <div key={`tab-${tab.name}`} className="tab">
+                <h3>{tab.name}</h3>
+                {renderWidgets(tab.widgets)}
+                {renderContent(tab.content)}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+
+    case 'accordion':
+      return (
+        <div className="form-section accordion-container">
+          <div className="accordion">
+            {container.items?.map((item) => (
+              <div key={`accordion-${item.name}`} className="accordion-item">
+                <div className="accordion-header">
+                  <h3>{item.name}</h3>
+                </div>
+                <div className="accordion-content">
+                  {renderWidgets(item.widgets)}
+                  {renderContent(item.content)}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+
+    case 'grid':
+      return (
+        <div className="form-section grid-container">
+          <div className="grid">
+            {container.rows?.map((row, rowIndex) => (
+              <div key={`grid-row-${rowIndex}`} className="grid-row">
+                {row.columns?.map((col, colIndex) => (
+                  <div key={`grid-col-${rowIndex}-${colIndex}`} className="grid-col">
+                    {renderWidgets(col.widgets)}
+                    {renderContent(col.content)}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+
+    case 'section':
+    default:
+      return (
+        <div key={`section-${container.name}`} className="form-section">
+          <h2>{container.name}</h2>
+          {renderWidgets(container.widgets)}
+          {renderContent(container.content)}
+        </div>
+      );
+  }
+};
+
 // Simple component without ErrorBoundary that prevents the removeChild error
 const App: React.FC = () => {
   const [appSpec, setAppSpec] = useState<AppSpec | null>(null);
+  const [functions, setFunctions] = useState<FunctionInfo[]>([]);
+  const [selectedFunction, setSelectedFunction] = useState<FunctionInfo | null>(null);
   const [inputs, setInputs] = useState<Record<string, any>>({});
   const [result, setResult] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -36,24 +152,21 @@ const App: React.FC = () => {
     };
   }, []);
 
-  // Fetch app specification on mount
+  // Fetch app specification and functions on mount
   useEffect(() => {
-    const fetchAppSpec = async () => {
+    const fetchData = async () => {
       try {
         const spec = await getAppSpec();
         if (isMountedRef.current) {
           setAppSpec(spec);
           
-          // Initialize inputs with default values
-          const defaultInputs: Record<string, any> = {};
-          spec.layout.sections.forEach((section: Section) => {
-            section.widgets.forEach((widget: WidgetSpec) => {
-              if (widget.default !== undefined) {
-                defaultInputs[widget.id] = widget.default;
-              }
-            });
-          });
-          setInputs(defaultInputs);
+          // Set functions from spec
+          setFunctions(spec.functions || []);
+          
+          // Select the first function by default if available
+          if (spec.functions && spec.functions.length > 0) {
+            setSelectedFunction(spec.functions[0]);
+          }
         }
       } catch (err) {
         if (isMountedRef.current) {
@@ -63,8 +176,52 @@ const App: React.FC = () => {
       }
     };
 
-    fetchAppSpec();
+    fetchData();
   }, []);
+
+
+  // Initialize inputs when selected function changes
+  useEffect(() => {
+    if (!selectedFunction) return;
+    
+    // Initialize inputs with default values
+    const defaultInputs: Record<string, any> = {};
+    
+    // Function to collect widgets from containers recursively
+    const collectWidgets = (container: any) => {
+      // Add widgets from this container - use optional chaining for extra safety
+      container.widgets?.forEach((widget: WidgetSpec) => {
+        if (widget.default !== undefined) {
+          defaultInputs[widget.id] = widget.default;
+        }
+      });
+      
+      // Process nested containers based on type
+      const containerType = container.type || 'section';
+      
+      if (containerType === 'tabs') {
+        container.tabs?.forEach(collectWidgets);
+      } else if (containerType === 'accordion') {
+        container.items?.forEach(collectWidgets);
+      } else if (containerType === 'section') {
+        container.content?.forEach(collectWidgets);
+      } else if (containerType === 'grid') {
+        container.rows?.forEach((row: any) => {
+          row.columns?.forEach((col: any) => {
+            collectWidgets(col);
+          });
+        });
+      }
+    };
+    
+    // Collect widgets from all containers - use optional chaining for layout itself
+    selectedFunction.layout?.containers?.forEach(collectWidgets);
+    
+    // For backward compatibility, also check sections - use optional chaining
+    selectedFunction.layout?.sections?.forEach(collectWidgets);
+    
+    setInputs(defaultInputs);
+  }, [selectedFunction]);
 
   // Fetch presets when appSpec is loaded
   useEffect(() => {
@@ -177,7 +334,7 @@ const App: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!appSpec) return;
+    if (!selectedFunction) return;
     
     try {
       setIsLoading(true);
@@ -188,8 +345,8 @@ const App: React.FC = () => {
       setTaskProgress(null);
       setTaskMessage(null);
       
-      // Get task ID from API
-      const response = await runFunction(inputs);
+      // Get task ID from API with function name
+      const response = await runFunction(selectedFunction.name, inputs);
       const newTaskId = response.task_id;
       if (isMountedRef.current) {
         setTaskId(newTaskId);
@@ -207,6 +364,7 @@ const App: React.FC = () => {
 
   // Stable key for the app container
   const appKey = useMemo(() => appSpec?.name || 'pyguizer-app', [appSpec]);
+
 
   // Simple error handling without ErrorBoundary
   if (error) {
@@ -244,75 +402,113 @@ const App: React.FC = () => {
         <p>{appSpec.description}</p>
       </div>
 
-      {/* Preset Management Section */}
-      <div className="form-section" key="preset-section">
-        <h2>Presets</h2>
-        <div className="preset-controls">
-          <div className="preset-list">
-            {presets.length > 0 ? (
-              presets.map(preset => (
-                <div key={preset.id} className="preset-item">
-                  <div className="preset-info">
-                    <h3>{preset.name}</h3>
-                    {preset.description && <p>{preset.description}</p>}
-                  </div>
-                  <div className="preset-actions">
-                    <button 
-                      type="button" 
-                      className="btn btn-secondary"
-                      onClick={() => handleLoadPreset(preset)}
-                    >
-                      Load
-                    </button>
-                    <button 
-                      type="button" 
-                      className="btn btn-danger"
-                      onClick={() => handleDeletePreset(preset.id)}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p>No presets saved yet.</p>
-            )}
-          </div>
-          <button 
-            type="button" 
-            className="btn btn-secondary"
-            onClick={() => setShowPresetModal(true)}
-          >
-            Save Current Inputs as Preset
-          </button>
-        </div>
-      </div>
-
-      <form onSubmit={handleSubmit} key="pyguizer-form">
-        {appSpec.layout.sections.map((section: Section) => (
-          <div key={`section-${section.name}`} className="form-section">
-            <h2>{section.name}</h2>
-            {section.widgets.map((widget: WidgetSpec) => (
-              <WidgetFactory
-                key={`widget-${widget.id}`}
-                widget={widget}
-                value={inputs[widget.id]}
-                onChange={handleInputChange}
-              />
+      <div className="app-layout">
+        {/* Function Sidebar */}
+        <div className="function-sidebar">
+          <h2>Functions</h2>
+          <div className="function-list">
+            {functions.map(func => (
+              <div 
+                key={func.name} 
+                className={`function-item ${selectedFunction?.name === func.name ? 'selected' : ''}`}
+                onClick={() => setSelectedFunction(func)}
+              >
+                <h3>{func.display_name}</h3>
+                <p>{func.description}</p>
+              </div>
             ))}
           </div>
-        ))}
-
-        <div className="form-actions" key="form-actions">
-          <button type="submit" className="btn btn-primary" disabled={isLoading}>
-            {isLoading ? (
-              <> <div className="loading"></div> Running... </>
-            ) : (
-              'Run Function'
-            )}
-          </button>
         </div>
-      </form>
+
+        {/* Main Content */}
+        <div className="main-content">
+          {selectedFunction ? (
+            <>
+              {/* Preset Management Section */}
+              <div className="form-section" key="preset-section">
+                <h2>Presets</h2>
+                <div className="preset-controls">
+                  <div className="preset-list">
+                    {presets.length > 0 ? (
+                      presets.map(preset => (
+                        <div key={preset.id} className="preset-item">
+                          <div className="preset-info">
+                            <h3>{preset.name}</h3>
+                            {preset.description && <p>{preset.description}</p>}
+                          </div>
+                          <div className="preset-actions">
+                            <button 
+                              type="button" 
+                              className="btn btn-secondary"
+                              onClick={() => handleLoadPreset(preset)}
+                            >
+                              Load
+                            </button>
+                            <button 
+                              type="button" 
+                              className="btn btn-danger"
+                              onClick={() => handleDeletePreset(preset.id)}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p>No presets saved yet.</p>
+                    )}
+                  </div>
+                  <button 
+                    type="button" 
+                    className="btn btn-secondary"
+                    onClick={() => setShowPresetModal(true)}
+                  >
+                    Save Current Inputs as Preset
+                  </button>
+                </div>
+              </div>
+
+              <form onSubmit={handleSubmit} key="pyguizer-form">
+                {/* Render containers from selected function */}
+                {selectedFunction.layout.containers?.map((container: Container) => (
+                  <ContainerRenderer
+                    key={`container-${container.name || 'unnamed'}`}
+                    container={container}
+                    inputs={inputs}
+                    onChange={handleInputChange}
+                  />
+                ))}
+
+                {/* For backward compatibility, render sections if containers is empty */}
+                {(!selectedFunction.layout.containers || selectedFunction.layout.containers.length === 0) && 
+                 selectedFunction.layout.sections?.map((section: Section) => (
+                  <ContainerRenderer
+                    key={`backward-section-${section.name}`}
+                    container={section}
+                    inputs={inputs}
+                    onChange={handleInputChange}
+                  />
+                ))}
+
+                <div className="form-actions" key="form-actions">
+                  <button type="submit" className="btn btn-primary" disabled={isLoading}>
+                    {isLoading ? (
+                      <> <div className="loading"></div> Running... </>
+                    ) : (
+                      'Run Function'
+                    )}
+                  </button>
+                </div>
+              </form>
+            </>
+          ) : (
+            <div className="no-function-selected">
+              <h2>No Function Selected</h2>
+              <p>Please select a function from the sidebar to get started.</p>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Save Preset Modal */}
       {showPresetModal && (
