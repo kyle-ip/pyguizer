@@ -57,4 +57,4 @@ jobs:
 
       - name: Run frontend unit tests
         run: |
-          cd frontend && npm test -- --watchAll=false --testPathPattern="\.test\.(ts|tsx)$" --testPathIgnorePattern="integration"
+          cd frontend && npm test -- --watchAll=false --testPathPatterns="\.test\.(ts|tsx)$" --testPathIgnorePattern="integration"
