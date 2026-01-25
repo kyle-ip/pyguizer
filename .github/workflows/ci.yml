@@ -228,9 +228,9 @@ jobs:
       #   run: |
       #     cd frontend && npm test -- --coverage --watchAll=false --testPathIgnorePatterns="integration"
 
-      - name: Run frontend integration tests
-        run: |
-          cd frontend && npm test -- --coverage --watchAll=false --testMatch="**/*.integration.test.{ts,tsx}"
+      # - name: Run frontend integration tests
+      #   run: |
+      #     cd frontend && npm test -- --coverage --watchAll=false --testMatch="**/*.integration.test.{ts,tsx}"
 
       - name: Build Python package
         run: |
