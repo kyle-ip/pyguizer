@@ -38,11 +38,13 @@ pytest = "^7.4.3"
 black = "^23.11.0"
 isort = "^5.12.0"
 flake8 = "^6.1.0"
+flake8-pyproject = "^1.2.3"  # Enable flake8 to read pyproject.toml config
 httpx = "^0.25.2"
 pytest-cov = "^4.1.0"
 pytest-mock = "^3.12.0"
 bandit = "^1.7.5"  # Vulnerability scanning
 autoflake = "^2.2.2"  # Auto-fix unused imports
+pylint = "^3.0.0"  # Code quality analysis
 
 [tool.poetry.scripts]
 pyguizer = "pyguizer.cli:app"
@@ -67,12 +69,12 @@ exclude = '''
 
 [tool.isort]
 profile = "black"
-line-length = 88
+line_length = 88
 skip_gitignore = true
-exclude = ["venv", "__pycache__", "build", "dist", "frontend"]
+skip = ["venv", "__pycache__", "build", "dist", "frontend"]
 
 [tool.flake8]
 max-line-length = 88
 exclude = [".git", "__pycache__", "build", "dist", "venv", "frontend"]
-extend-ignore = ["E203", "W503"]  # Ignore black-related formatting issues
+extend-ignore = ["E203", "W503", "F541"]  # Ignore black-related formatting issues and f-string without placeholders
 select = ["E", "F", "W", "C90"]

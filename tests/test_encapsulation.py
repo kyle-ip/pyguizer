@@ -7,10 +7,12 @@ pyguizer = PyGUIzer()
 
 # Define multiple functions with PyGUIzer decorator
 
+
 @pyguizer
 def greet(name: str, greeting: str = "Hello") -> str:
     """Generate a greeting message."""
     return f"{greeting}, {name}!"
+
 
 @pyguizer
 def calculate(a: int, b: int, operation: str = "add") -> int:
@@ -26,6 +28,7 @@ def calculate(a: int, b: int, operation: str = "add") -> int:
     else:
         raise ValueError(f"Unknown operation: {operation}")
 
+
 @pyguizer
 def format_text(text: str, uppercase: bool = False, reverse: bool = False) -> str:
     """Format text according to specified options."""
@@ -36,6 +39,7 @@ def format_text(text: str, uppercase: bool = False, reverse: bool = False) -> st
         result = result[::-1]
     return result
 
+
 if __name__ == "__main__":
     print("=== PyGUIzer Encapsulation Test ===")
     print("This script demonstrates that users don't need to write any FastAPI code.")
@@ -45,6 +49,6 @@ if __name__ == "__main__":
         print(f"  - {func.__name__}")
     print("\nTo run the server, uncomment the following line:")
     print("# PyGUIzer.run()")
-    
+
     # Uncomment to actually run the server
     # PyGUIzer.run()

@@ -1,33 +1,35 @@
 """Layout Processing Module"""
 
-from typing import Any, Dict, List, Set
+from typing import Any, Dict, List
 
 
-def process_layout(wsos: List[Dict[str, Any]], layout_config: Dict[str, Any]) -> Dict[str, Any]:
+def process_layout(
+    wsos: List[Dict[str, Any]], layout_config: Dict[str, Any]
+) -> Dict[str, Any]:
     """
     Process layout configuration and merge with Widget Specification Objects.
-    
+
     Args:
         wsos: List of Widget Specification Objects.
         layout_config: Layout configuration dictionary.
-        
+
     Returns:
         Processed UI Layout Schema.
     """
     # Get all widget ids
     widget_ids = {wso["id"] for wso in wsos}
-    
+
     # Create a set of all widgets mentioned in the layout
     layout_widgets = set()
-    
+
     def collect_widgets(container: Dict[str, Any]):
         """Recursively collect all widgets from containers"""
         if "widgets" in container:
             layout_widgets.update(container["widgets"])
-        
+
         # Process nested containers based on type
         container_type = container.get("type", "section")
-        
+
         if container_type == "tabs":
             for tab in container.get("tabs", []):
                 collect_widgets(tab)
@@ -44,29 +46,31 @@ def process_layout(wsos: List[Dict[str, Any]], layout_config: Dict[str, Any]) ->
             for row in container.get("rows", []):
                 for col in row.get("columns", []):
                     collect_widgets(col)
-    
+
     # Start collecting from the root containers
-    root_containers = layout_config.get("containers", layout_config.get("sections", [{"name": "Main", "widgets": []}]))
+    root_containers = layout_config.get(
+        "containers", layout_config.get("sections", [{"name": "Main", "widgets": []}])
+    )
     for container in root_containers:
         collect_widgets(container)
-    
+
     # Find unassigned widgets
     unassigned_widgets = widget_ids - layout_widgets
-    
+
     # Create processed UI Layout Schema
-    ui_layout = {
-        "containers": []
-    }
-    
-    def process_container(container: Dict[str, Any], level: int = 0, is_first: bool = False) -> Dict[str, Any]:
+    ui_layout = {"containers": []}
+
+    def process_container(
+        container: Dict[str, Any], level: int = 0, is_first: bool = False
+    ) -> Dict[str, Any]:
         """Recursively process containers"""
         processed = container.copy()
         container_type = container.get("type", "section")
-        
+
         # Process widgets for this container
         container_widgets = []
         widgets_to_process = container.get("widgets", [])
-        
+
         # Handle unassigned widgets based on container type
         if is_first and unassigned_widgets:
             if container_type == "section":
@@ -84,15 +88,15 @@ def process_layout(wsos: List[Dict[str, Any]], layout_config: Dict[str, Any]) ->
                 # Add unassigned widgets to the first cell
                 if container.get("rows") and container.get("rows")[0].get("columns"):
                     pass
-        
+
         # Find corresponding WSOs for each widget ID
         for widget_id in widgets_to_process:
             wso = next((w for w in wsos if w["id"] == widget_id), None)
             if wso:
                 container_widgets.append(wso)
-        
+
         processed["widgets"] = container_widgets
-        
+
         # Process nested containers
         if container_type == "tabs":
             processed_tabs = []
@@ -113,7 +117,10 @@ def process_layout(wsos: List[Dict[str, Any]], layout_config: Dict[str, Any]) ->
                 processed_items.append(process_container(item, level + 1))
             processed["items"] = processed_items
         elif container_type == "section":
-            processed["content"] = [process_container(nested, level + 1) for nested in container.get("content", [])]
+            processed["content"] = [
+                process_container(nested, level + 1)
+                for nested in container.get("content", [])
+            ]
         elif container_type == "grid":
             processed["rows"] = []
             for row_idx, row in enumerate(container.get("rows", [])):
@@ -121,21 +128,31 @@ def process_layout(wsos: List[Dict[str, Any]], layout_config: Dict[str, Any]) ->
                 processed_row["columns"] = []
                 for col_idx, col in enumerate(row.get("columns", [])):
                     # Add unassigned widgets to the first cell
-                    if row_idx == 0 and col_idx == 0 and is_first and unassigned_widgets:
+                    if (
+                        row_idx == 0
+                        and col_idx == 0
+                        and is_first
+                        and unassigned_widgets
+                    ):
                         col = col.copy()
-                        col["widgets"] = col.get("widgets", []) + list(unassigned_widgets)
+                        col["widgets"] = col.get("widgets", []) + list(
+                            unassigned_widgets
+                        )
                     processed_row["columns"].append(process_container(col, level + 1))
                 processed["rows"].append(processed_row)
-        
+
         return processed
-    
+
     # Process all root containers
     for i, container in enumerate(root_containers):
         processed_container = process_container(container, is_first=(i == 0))
         ui_layout["containers"].append(processed_container)
-    
-    # For backward compatibility, keep sections key if no containers specified
-    if "containers" not in layout_config and "sections" in layout_config:
-        ui_layout["sections"] = [container for container in ui_layout["containers"] if container.get("type", "section") == "section"]
-    
+
+    # For backward compatibility, always expose section-type containers as "sections"
+    ui_layout["sections"] = [
+        container
+        for container in ui_layout["containers"]
+        if container.get("type", "section") == "section"
+    ]
+
     return ui_layout
