@@ -243,15 +243,15 @@ jobs:
 
       - name: Prepare demos page (examples + run instructions)
         run: |
-          mkdir -p frontend/dist/demos
-          cp -r examples frontend/dist/demos/
-          cp scripts/demos-index.html frontend/dist/demos/index.html
+          mkdir -p frontend/build/demos
+          cp -r examples frontend/build/demos/
+          cp scripts/demos-index.html frontend/build/demos/index.html
 
       - name: Deploy frontend demo to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./frontend/dist
+          publish_dir: ./frontend/build
           publish_branch: gh-pages
 
   # ─── Publish to PyPI (main only) ──────────────────────────────────────────
