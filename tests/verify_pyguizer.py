@@ -1,5 +1,5 @@
-import sys
 import os
+import sys
 
 # Add the current directory to the path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -7,8 +7,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # Test core functionality without external dependencies
 try:
     from pyguizer.core.introspection import introspect_function
-    from pyguizer.core.widget import generate_wso
     from pyguizer.core.layout import process_layout
+    from pyguizer.core.widget import generate_wso
 
     print("✓ Successfully imported core PyGUIzer components")
 
@@ -25,19 +25,17 @@ try:
     print(f"  Parameters: {len(func_info['parameters'])}")
 
     # Test WSO generation
-    wsos = generate_wso(func_info['parameters'])
+    wsos = generate_wso(func_info["parameters"])
     print("\n✓ WSO generation successful:")
     for wso in wsos:
         print(f"  - {wso['id']}: {wso['type']} (required: {wso['required']})")
 
     # Test layout processing
-    layout_config = {
-        "sections": [{"name": "Main", "widgets": ["name", "age"]}]
-    }
+    layout_config = {"sections": [{"name": "Main", "widgets": ["name", "age"]}]}
     layout = process_layout(wsos, layout_config)
     print("\n✓ Layout processing successful:")
     print(f"  Sections: {len(layout['sections'])}")
-    for section in layout['sections']:
+    for section in layout["sections"]:
         print(f"  - {section['name']}: {len(section['widgets'])} widgets")
 
     print("\n🎉 All core PyGUIzer functions are working correctly!")
@@ -46,5 +44,6 @@ try:
 except Exception as e:
     print(f"✗ Error: {e}")
     import traceback
+
     traceback.print_exc()
     sys.exit(1)

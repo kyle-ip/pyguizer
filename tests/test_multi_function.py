@@ -7,17 +7,21 @@ from pyguizer.api.app import PyGUIzerApp
 
 # Define test functions
 
+
 def add(a: int, b: int) -> int:
     """Add two numbers"""
     return a + b
+
 
 def multiply(a: int, b: int) -> int:
     """Multiply two numbers"""
     return a * b
 
+
 def subtract(a: int, b: int) -> int:
     """Subtract two numbers"""
     return a - b
+
 
 # Create a PyGUIzerApp instance and register functions
 print("=== Testing PyGUIzer Multi-Function Support ===")
@@ -37,7 +41,7 @@ app_spec = app.get_app_spec()
 print(f"✓ Got app spec with {len(app_spec['functions'])} functions")
 
 # Print function details
-for func in app_spec['functions']:
+for func in app_spec["functions"]:
     print(f"  - {func['name']}: {func['display_name']}")
 
 # Test running a function

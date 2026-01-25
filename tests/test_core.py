@@ -10,6 +10,7 @@ print("Testing PyGUIzer core functionality...")
 # Test that we can import the PyGUIzer decorator
 try:
     from pyguizer import PyGUIzer
+
     print("✓ Successfully imported PyGUIzer decorator")
 except Exception as e:
     print(f"✗ Failed to import PyGUIzer decorator: {e}")
@@ -17,11 +18,12 @@ except Exception as e:
 
 # Test that we can create a decorated function
 try:
+
     @PyGUIzer()
     def test_func(name: str, value: int = 42) -> str:
         """Test function."""
         return f"Test: {name} = {value}"
-    
+
     print("✓ Successfully created decorated function")
 except Exception as e:
     print(f"✗ Failed to create decorated function: {e}")
@@ -29,7 +31,9 @@ except Exception as e:
 
 # Test that the decorator adds the __pyguizer__ attribute
 try:
-    assert hasattr(test_func, "__pyguizer__"), "Function should have __pyguizer__ attribute"
+    assert hasattr(
+        test_func, "__pyguizer__"
+    ), "Function should have __pyguizer__ attribute"
     print("✓ Decorator correctly adds __pyguizer__ attribute")
 except AssertionError as e:
     print(f"✗ {e}")
@@ -42,7 +46,9 @@ except Exception as e:
 try:
     pg_instance = test_func.__pyguizer__
     assert hasattr(pg_instance, "func"), "PyGUIzer instance should have func attribute"
-    assert pg_instance.func == test_func, "func attribute should point to the decorated function"
+    assert (
+        pg_instance.func == test_func
+    ), "func attribute should point to the decorated function"
     print("✓ PyGUIzer instance has correct func attribute")
 except Exception as e:
     print(f"✗ Failed to access PyGUIzer instance: {e}")

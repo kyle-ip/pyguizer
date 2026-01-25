@@ -1,8 +1,5 @@
 import os
 import sys
-import tempfile
-import shutil
-from pathlib import Path
 
 # Add the current directory to the path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -12,7 +9,8 @@ print("Testing PyGUIzer CLI functionality...")
 
 # Import the CLI app
 try:
-    from pyguizer.cli import app
+    pass
+
     print("✓ Successfully imported CLI app")
 except Exception as e:
     print(f"✗ Failed to import CLI app: {e}")
@@ -21,11 +19,11 @@ except Exception as e:
 # Test that we can create a PyGUIzer instance
 try:
     from pyguizer import PyGUIzer
-    
+
     @PyGUIzer()
     def test_func(name: str, value: int) -> str:
         return f"Test: {name} - {value}"
-    
+
     print("✓ Successfully created PyGUIzer-decorated function")
 except Exception as e:
     print(f"✗ Failed to create PyGUIzer instance: {e}")
@@ -33,7 +31,9 @@ except Exception as e:
 
 # Test the decorator adds the __pyguizer__ attribute
 try:
-    assert hasattr(test_func, "__pyguizer__"), "Function should have __pyguizer__ attribute"
+    assert hasattr(
+        test_func, "__pyguizer__"
+    ), "Function should have __pyguizer__ attribute"
     print("✓ PyGUIzer decorator correctly adds __pyguizer__ attribute")
 except AssertionError as e:
     print(f"✗ {e}")

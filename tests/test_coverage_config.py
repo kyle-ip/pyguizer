@@ -1,23 +1,16 @@
 """Test coverage configuration and utilities."""
 
-import pytest
+
 import coverage
-import sys
-from pathlib import Path
+import pytest
 
 
 def pytest_configure(config):
     """Configure pytest with coverage settings."""
     # Start coverage
     cov = coverage.Coverage(
-        source=['pyguizer'],
-        omit=[
-            '*/tests/*',
-            '*/test_*.py',
-            '*/__pycache__/*',
-            '*/venv/*',
-            '*/env/*'
-        ]
+        source=["pyguizer"],
+        omit=["*/tests/*", "*/test_*.py", "*/__pycache__/*", "*/venv/*", "*/env/*"],
     )
     cov.start()
     config._coverage = cov
@@ -25,11 +18,11 @@ def pytest_configure(config):
 
 def pytest_unconfigure(config):
     """Clean up coverage after tests."""
-    if hasattr(config, '_coverage'):
+    if hasattr(config, "_coverage"):
         cov = config._coverage
         cov.stop()
         cov.save()
-        
+
         # Generate report
         try:
             cov.report()
