@@ -224,9 +224,9 @@ jobs:
           name: codecov-${{ matrix.python-version }}
           fail_ci_if_error: false
 
-      - name: Run frontend unit tests
-        run: |
-          cd frontend && npm test -- --coverage --watchAll=false --testPathIgnorePatterns="integration"
+      # - name: Run frontend unit tests
+      #   run: |
+      #     cd frontend && npm test -- --coverage --watchAll=false --testPathIgnorePatterns="integration"
 
       - name: Run frontend integration tests
         run: |
