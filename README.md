@@ -145,16 +145,16 @@ python -m pyguizer package app.py
 
 ```bash
 # Package a traditional decorator-based app
-python -m pyguizer package examples/simple_deploy_example.py
+python -m pyguizer package examples/simple_deploy.py
 
 # Package a simple function file with auto-registration (no decorators!)
 python -m pyguizer package examples/simple_function.py
 
 # Custom name and output directory
-python -m pyguizer package examples/simple_deploy_example.py --name my_app --output_dir ./build
+python -m pyguizer package examples/simple_deploy.py --name my_app --output_dir ./build
 
 # With console window for debugging
-python -m pyguizer package examples/simple_deploy_example.py --windowed false
+python -m pyguizer package examples/simple_deploy.py --windowed false
 ```
 
 #### One-Click Deployment Workflow

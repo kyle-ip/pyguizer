@@ -590,12 +590,31 @@ const App: React.FC = () => {
         </div>
       )}
 
+      {/* Shutdown Button */}
+      <div className="shutdown-section" key="shutdown-section">
+        <button 
+          type="button" 
+          className="btn btn-danger"
+          onClick={async () => {
+            try {
+              await fetch('/api/shutdown', { method: 'POST' });
+            } catch (error) {
+              console.error('Error shutting down server:', error);
+            }
+          }}
+        >
+          Quit Application
+        </button>
+      </div>
+      
       {/* Task Result */}
-      {result !== null && (
+      {result !== null && result !== undefined && (
         <div className="result-section" key="task-result">
           <h2>Result</h2>
           <div className="result-content">
-            {typeof result === 'object' ? (
+            {result === null ? (
+              'null'
+            ) : typeof result === 'object' ? (
               JSON.stringify(result, null, 2)
             ) : (
               <ReactMarkdown

@@ -47,7 +47,7 @@ autoflake = "^2.2.2"  # Auto-fix unused imports
 pylint = "^3.0.0"  # Code quality analysis
 
 [tool.poetry.scripts]
-pyguizer = "pyguizer.cli:app"
+pyguizer = "pyguizer.__main__:main"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
