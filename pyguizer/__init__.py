@@ -11,6 +11,8 @@ class PyGUIzer:
 
     def __init__(self, layout=None):
         self.layout = layout or {"sections": [{"name": "Main", "widgets": []}]}
+        # Store registered functions for this instance
+        self.functions = []
 
     def __call__(self, func):
         self.func = func
@@ -19,7 +21,19 @@ class PyGUIzer:
         # Add to registered functions list if not already present
         if func not in PyGUIzer.registered_functions:
             PyGUIzer.registered_functions.append(func)
+        if func not in self.functions:
+            self.functions.append(func)
         return func
+    
+    def register_function(self, func):
+        """Register a function with this PyGUIzer instance."""
+        # Store a reference to this PyGUIzer instance on the function
+        func.__pyguizer__ = self
+        # Add to registered functions list if not already present
+        if func not in PyGUIzer.registered_functions:
+            PyGUIzer.registered_functions.append(func)
+        if func not in self.functions:
+            self.functions.append(func)
 
     @classmethod
     def run(
@@ -73,6 +87,16 @@ class PyGUIzer:
         print(f"API documentation available at http://{host}:{port}/docs")
         print("\nPress Ctrl+C to stop the server")
         uvicorn.run(app, host=host, port=port)
+    
+    def register_function(self, func):
+        """Register a function with this PyGUIzer instance."""
+        # Store a reference to this PyGUIzer instance on the function
+        func.__pyguizer__ = self
+        # Add to registered functions list if not already present
+        if func not in PyGUIzer.registered_functions:
+            PyGUIzer.registered_functions.append(func)
+        if func not in self.functions:
+            self.functions.append(func)
 
 
 # Lazy import core components to avoid circular dependencies and heavy imports

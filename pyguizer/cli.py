@@ -3,7 +3,11 @@
 # flake8: noqa: E501
 import importlib.util
 import os
+import shutil
+import subprocess
 import sys
+import tempfile
+from typing import Optional
 
 import typer
 import uvicorn
@@ -13,12 +17,10 @@ app = typer.Typer(name="pyguizer", help="PyGUIzer CLI Tool")
 
 @app.command(name="run")
 def run(
-    file_path: str = typer.Argument(
-        ..., help="Path to the Python file containing the PyGUIzer-decorated function"
-    ),
-    host: str = typer.Option("0.0.0.0", help="Host to run the server on"),
-    port: int = typer.Option(8000, help="Port to run the server on"),
-    reload: bool = typer.Option(False, help="Enable auto-reload"),
+    file_path: str,
+    host: str = "0.0.0.0",
+    port: int = 8000,
+    reload: bool = False,
 ):
     """Run a PyGUIzer application from a Python file."""
     # Validate the file path
@@ -77,13 +79,45 @@ def run(
                     decorated_functions.append(name)
 
         if not pyguizer_instances:
-            typer.echo(
-                f"Error: No PyGUIzer-decorated functions found in {file_path}", err=True
-            )
-            typer.echo(
-                "Hint: Make sure you've decorated your function with @PyGUIzer()"
-            )
-            raise typer.Exit(code=1)
+            # No PyGUIzer-decorated functions found, auto-register all callable functions
+            from pyguizer import PyGUIzer
+            typer.echo(f"Info: No PyGUIzer-decorated functions found, auto-registering all callable functions in {file_path}")
+            
+            # Create a new PyGUIzer instance
+            auto_pyguizer = PyGUIzer()
+            
+            # Register all callable functions from the module
+            for name, obj in module.__dict__.items():
+                if callable(obj) and not name.startswith('_'):  # Skip private functions
+                    try:
+                        # Check if it's a built-in function or imported function
+                        if hasattr(obj, '__module__') and obj.__module__ == module.__name__:
+                            auto_pyguizer.register_function(obj)
+                            decorated_functions.append(name)
+                    except Exception as e:
+                        typer.echo(f"Warning: Could not register function {name}: {e}", err=True)
+            
+            if decorated_functions:
+                pyguizer_instances = [auto_pyguizer]
+                typer.echo(f"Info: Auto-registered {len(decorated_functions)} functions: {', '.join(decorated_functions)}")
+            else:
+                # Try one more approach - check all functions in the module
+                for name, obj in module.__dict__.items():
+                    if callable(obj):
+                        try:
+                            auto_pyguizer.register_function(obj)
+                            decorated_functions.append(name)
+                        except Exception as e:
+                            continue
+                
+                if decorated_functions:
+                    pyguizer_instances = [auto_pyguizer]
+                    typer.echo(f"Info: Auto-registered {len(decorated_functions)} functions: {', '.join(decorated_functions)}")
+                else:
+                    typer.echo(
+                        f"Error: No callable functions found in {file_path}", err=True
+                    )
+                    raise typer.Exit(code=1)
 
         # For now, use the first PyGUIzer instance
         pyguizer_instance = pyguizer_instances[0]
@@ -132,7 +166,7 @@ def run(
 
 @app.command(name="init")
 def init(
-    project_name: str = typer.Argument(..., help="Name of the new PyGUIzer project"),
+    project_name: str,
 ):
     """Initialize a new PyGUIzer project."""
     # Create project directory
@@ -271,6 +305,29 @@ def init(
     typer.echo(
         f"   - Customize layouts with the layout parameter in @PyGUIzer(layout={...})"
     )
+
+
+@app.command(name="package")
+def package(file_path: str):
+    """Package a PyGUIzer application into a standalone executable."""
+    import sys
+    import subprocess
+    import os
+    
+    typer.echo(f"📦 Packaging PyGUIzer application from {file_path}...")
+    
+    # Get the path to the deployment script
+    deploy_script = os.path.join(os.path.dirname(__file__), "../scripts/deploy.py")
+    deploy_script = os.path.abspath(deploy_script)
+    
+    # Run the deployment script as a subprocess
+    result = subprocess.run([sys.executable, deploy_script, file_path], check=False)
+    
+    if result.returncode == 0:
+        typer.echo("✅ Packaging completed successfully!")
+    else:
+        typer.echo(f"❌ Packaging failed with exit code {result.returncode}", err=True)
+        raise typer.Exit(code=1)
 
 
 if __name__ == "__main__":

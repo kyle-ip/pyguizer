@@ -154,26 +154,45 @@ class TaskManager:
 
     def update_task(self, task_id: str, **kwargs):
         """Update task information."""
+        import json
         task = self.get_task(task_id)
         task.update(kwargs)
-        # Broadcast updates to connected WebSockets
+        # Create a safe copy of the task for broadcasting (serialize result to break circular references)
+        task_copy = task.copy()
+        if task_copy.get("result") is not None:
+            try:
+                # Serialize the result to JSON and back to break circular references
+                task_copy["result"] = json.loads(json.dumps(task_copy["result"], default=str))
+            except Exception as e:
+                # Fallback to string conversion if serialization fails
+                task_copy["result"] = str(task_copy["result"])
+        # Convert enum values to strings explicitly for consistent serialization
+        if isinstance(task_copy.get("status"), Enum):
+            task_copy["status"] = task_copy["status"].value
+        # Broadcast updates to connected WebSockets with safe task copy
         asyncio.create_task(
             self.manager.broadcast(
-                {"type": "task_update", "task_id": task_id, "task": task}, task_id
+                {"type": "task_update", "task_id": task_id, "task": task_copy}, task_id
             )
         )
 
     def cancel_task(self, task_id: str):
         """Cancel a running task."""
+        import json
         task = self.get_task(task_id)
         task["cancelled"] = True
         task["status"] = TaskStatus.CANCELLED
         task["completed_at"] = time.time()
         task["message"] = "Task cancelled by user"
-        # Broadcast cancellation to connected WebSockets
+        # Create a safe copy of the task for broadcasting
+        task_copy = task.copy()
+        # Convert enum values to strings explicitly for consistent serialization
+        if isinstance(task_copy.get("status"), Enum):
+            task_copy["status"] = task_copy["status"].value
+        # Broadcast cancellation to connected WebSockets with safe task copy
         asyncio.create_task(
             self.manager.broadcast(
-                {"type": "task_update", "task_id": task_id, "task": task}, task_id
+                {"type": "task_update", "task_id": task_id, "task": task_copy}, task_id
             )
         )
 
@@ -230,6 +249,7 @@ class PyGUIzerApp:
         # Build function specs for all registered functions
         functions = []
         for func_name, func_data in self.function_registry.items():
+            # Extract only the necessary information without complex type objects
             functions.append(
                 {
                     "name": func_name,
@@ -389,14 +409,41 @@ def create_app(pyguizer_app=None, func=None, layout=None):
             pyguizer_app = None
 
     if pyguizer_app is None:
-        pyguizer_app = PyGUIzerApp(func, layout)
+        pyguizer_app = PyGUIzerApp(func=func, layout=layout)
     task_manager = TaskManager()
 
     # Define API routes first (order matters!)
     @app.get("/api/spec")
     async def get_spec():
         """Get the application specification."""
-        return pyguizer_app.get_app_spec()
+        import logging
+        import json
+        logger = logging.getLogger(__name__)
+        try:
+            spec = pyguizer_app.get_app_spec()
+            # Create a copy of the spec to avoid modifying the original
+            spec_copy = json.loads(json.dumps(spec, default=str))
+            logger.info(f"Successfully generated spec with {len(spec_copy.get('functions', []))} functions")
+            return spec_copy
+        except Exception as e:
+            logger.error(f"Error generating spec: {str(e)}", exc_info=True)
+            raise HTTPException(status_code=500, detail=f"Failed to generate spec: {str(e)}")
+    
+    @app.post("/api/shutdown")
+    async def shutdown():
+        """Shutdown the server."""
+        import logging
+        import os
+        import signal
+        logger = logging.getLogger(__name__)
+        logger.info("Shutdown requested")
+        # For Windows, we'll use a different approach since os.kill with signal.SIGTERM doesn't work the same
+        if os.name == 'nt':  # Windows
+            import subprocess
+            subprocess.Popen("taskkill /F /PID {}".format(os.getpid()), shell=True)
+        else:  # Unix-like
+            os.kill(os.getpid(), signal.SIGTERM)
+        return {"status": "shutting down"}
 
     @app.post("/api/run", response_model=RunResponse)
     async def run(request: RunRequest):
@@ -510,21 +557,28 @@ def create_app(pyguizer_app=None, func=None, layout=None):
                 status_code=500, detail=f"Internal server error: {str(e)}"
             )
 
-    @app.get("/api/tasks/{task_id}", response_model=TaskInfo)
+    @app.get("/api/tasks/{task_id}")
     async def get_task(task_id: str):
         """Get task information by ID."""
-        task = task_manager.get_task(task_id)
-        return TaskInfo(
-            task_id=task_id,
-            status=task["status"],
-            created_at=task["created_at"],
-            started_at=task["started_at"],
-            completed_at=task["completed_at"],
-            result=task["result"],
-            error=task["error"],
-            progress=task["progress"],
-            message=task["message"],
-        )
+        import json
+        import logging
+        logger = logging.getLogger(__name__)
+        try:
+            task = task_manager.get_task(task_id)
+            # Create a copy of the task to avoid modifying the original
+            task_copy = task.copy()
+            # Properly serialize the result to handle circular references
+            if task_copy.get("result") is not None:
+                try:
+                    # Serialize the result to JSON and back to break circular references
+                    task_copy["result"] = json.loads(json.dumps(task_copy["result"], default=str))
+                except Exception as e:
+                    logger.error(f"Error serializing result: {str(e)}", exc_info=True)
+                    task_copy["result"] = str(task_copy["result"])
+            return task_copy
+        except Exception as e:
+            logger.error(f"Error getting task: {str(e)}", exc_info=True)
+            raise HTTPException(status_code=500, detail=f"Failed to get task: {str(e)}")
 
     @app.post("/api/tasks/{task_id}/cancel")
     async def cancel_task(task_id: str):
@@ -535,6 +589,7 @@ def create_app(pyguizer_app=None, func=None, layout=None):
     @app.websocket("/api/tasks/{task_id}/stream")
     async def websocket_endpoint(websocket: WebSocket, task_id: str):
         """WebSocket endpoint for real-time task updates."""
+        import json
         # Check if task exists
         task_manager.get_task(task_id)
 
@@ -542,10 +597,21 @@ def create_app(pyguizer_app=None, func=None, layout=None):
         await task_manager.manager.connect(websocket, task_id)
 
         try:
-            # Send initial task status
+            # Send initial task status with proper serialization
             task = task_manager.get_task(task_id)
+            # Create a safe copy of the task for sending over WebSocket
+            task_copy = task.copy()
+            # Ensure proper JSON serialization (same as update_task method)
+            if task_copy.get("result") is not None:
+                try:
+                    task_copy["result"] = json.loads(json.dumps(task_copy["result"], default=str))
+                except Exception as e:
+                    task_copy["result"] = str(task_copy["result"])
+            # Convert enum values to strings explicitly for consistent serialization
+            if isinstance(task_copy.get("status"), Enum):
+                task_copy["status"] = task_copy["status"].value
             await websocket.send_json(
-                {"type": "task_update", "task_id": task_id, "task": task}
+                {"type": "task_update", "task_id": task_id, "task": task_copy}
             )
 
             # Keep connection alive and listen for messages

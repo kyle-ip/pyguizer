@@ -18,6 +18,7 @@ Automatically generate interactive, production-ready web GUI applications from s
   - 🌟 Interactive controls with real-time feedback
   - 📱 Responsive design for different screen sizes
   - 🎯 Built on FastAPI and React for robust, scalable applications
+  - 🚀 **Smart Auto-Registration**: Works with any Python file without requiring explicit `@PyGUIzer()` decorators
 - **Advanced Intelligent Type Mapping**: Smart conversion of 15+ Python types to appropriate UI widgets
   - Basic types: `str`, `int`, `float`, `bool`
   - Complex types: `List`, `Set`, `Dict`, `Tuple`, `FrozenSet`
@@ -73,6 +74,7 @@ pip install -e .
 
 ### Basic Usage
 
+#### Traditional Method (with decorator)
 ```python
 from typing import List
 from pyguizer import PyGUIzer
@@ -91,28 +93,94 @@ if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
 ```
 
+#### New Method (auto-registration - no decorator needed!)
+```python
+def add(a: int, b: int) -> int:
+    """Add two numbers."""
+    return a + b
+
+# That's it! No decorators, no imports needed
+```
+
 ### Run with CLI
 
 ```bash
-# Create a sample file
-cat > app.py << 'EOF'
-from typing import List
-from pyguizer import PyGUIzer
-
-@PyGUIzer()
-def greet(name: str, age: int, hobbies: List[str] = None) -> str:
-    """Generate a greeting message."""
-    hobbies_str = f" and enjoy {', '.join(hobbies)}" if hobbies else ""
-    return f"Hello {name}! You are {age} years old{hobbies_str}."
+# Create a simple function file with no decorators
+cat > simple_add.py << 'EOF'
+def add(a: int, b: int) -> int:
+    """Add two numbers."""
+    return a + b
 EOF
 
-# Run with PyGUIzer CLI
-python -m pyguizer run app.py
+# Run with PyGUIzer CLI - auto-registration works automatically
+python -m pyguizer run simple_add.py
+
+# Run with decorator-based app (still works!)
+python -m pyguizer run examples/simple_deploy.py
 ```
 
 Open your browser to `http://localhost:8000` to see your generated GUI!
 
 ## 📖 Detailed Usage
+
+### Packaging for Deployment
+
+PyGUIzer provides a simple command to package your application into a standalone executable that can be run anywhere with a single click. No external dependencies required!
+
+```bash
+# Package your PyGUIzer application into a standalone executable
+python -m pyguizer package app.py
+```
+
+#### Package Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `name` | Name for the executable | Same as input file name |
+| `output_dir` | Output directory for the executable | `./dist` |
+| `onefile` | Create a single-file executable | `True` |
+| `windowed` | Create a windowed (GUI) executable without console | `True` |
+
+#### Example Usage
+
+```bash
+# Package a traditional decorator-based app
+python -m pyguizer package examples/simple_deploy_example.py
+
+# Package a simple function file with auto-registration (no decorators!)
+python -m pyguizer package examples/simple_function.py
+
+# Custom name and output directory
+python -m pyguizer package examples/simple_deploy_example.py --name my_app --output_dir ./build
+
+# With console window for debugging
+python -m pyguizer package examples/simple_deploy_example.py --windowed false
+```
+
+#### One-Click Deployment Workflow
+
+1. **Create your function** with type hints:
+   ```python
+   from typing import List
+   from pyguizer import PyGUIzer
+   
+   pyguizer = PyGUIzer()
+   
+   @pyguizer
+   def greet(name: str, age: int, hobbies: List[str] = None) -> str:
+       hobbies_str = f" and enjoy {', '.join(hobbies)}" if hobbies else ""
+       return f"Hello {name}! You are {age} years old{hobbies_str}."
+   ```
+
+2. **Package it** into an executable:
+   ```bash
+   python -m pyguizer package my_app.py
+   ```
+
+3. **Run it** anywhere with a single click!
+   - The executable will automatically start a local server
+   - Your browser will open to show the GUI
+   - No Python or dependencies needed
 
 ### Comprehensive Type-to-Widget Mapping
 
