@@ -135,6 +135,7 @@ except Exception as e:
 
 # Test async function execution
 try:
+
     def test_async_execution():
         """Test async execution of both sync and async functions."""
 

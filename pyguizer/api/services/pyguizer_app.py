@@ -320,7 +320,6 @@ class PyGUIzerApp:
                 status_code=400,
                 detail=f"Target input '{connection_data.target_input}' not found "
                 f"in function '{target_node.function_name}'",
-
             )
 
         connection = PipelineConnection(
@@ -434,7 +433,6 @@ class PyGUIzerApp:
                 errors.append(
                     f"Node '{node.node_name}' references non-existent function "
                     f"'{node.function_name}'"
-
                 )
 
         return {

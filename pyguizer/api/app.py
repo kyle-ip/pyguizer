@@ -120,7 +120,7 @@ def create_app(pyguizer_app=None, func=None, layout=None):
             spec_copy = json.loads(json.dumps(spec, default=str))
             logger.info(
                 "Successfully generated spec with %d functions",
-                len(spec_copy.get('functions', []))
+                len(spec_copy.get("functions", [])),
             )
             return spec_copy
         except Exception as e:
