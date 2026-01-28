@@ -6,6 +6,9 @@ import {
   getPresets, 
   createPreset, 
   deletePreset, 
+  runBatch,
+  BatchRequest,
+  BatchFunction,
   Preset, 
   PresetCreate 
 } from './services/api';
@@ -21,13 +24,16 @@ import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
 import WidgetFactory from './components/WidgetFactory';
+import LayoutEditor from './components/LayoutEditor';
+import Chart from './components/Chart';
 
 // Container Renderer Component
 const ContainerRenderer: React.FC<{
   container: Container;
   inputs: Record<string, any>;
   onChange: (id: string, value: any) => void;
-}> = ({ container, inputs, onChange }) => {
+  isDarkMode: boolean;
+}> = ({ container, inputs, onChange, isDarkMode }) => {
   // Render widgets for this container
   const renderWidgets = (widgets: WidgetSpec[]) => {
     return widgets.map((widget: WidgetSpec) => (
@@ -36,6 +42,7 @@ const ContainerRenderer: React.FC<{
         widget={widget}
         value={inputs[widget.id]}
         onChange={onChange}
+        isDarkMode={isDarkMode}
       />
     ));
   };
@@ -50,6 +57,7 @@ const ContainerRenderer: React.FC<{
         container={nestedContainer}
         inputs={inputs}
         onChange={onChange}
+        isDarkMode={isDarkMode}
       />
     ));
   };
@@ -124,6 +132,7 @@ const ContainerRenderer: React.FC<{
 const App: React.FC = () => {
   const [appSpec, setAppSpec] = useState<AppSpec | null>(null);
   const [functions, setFunctions] = useState<FunctionInfo[]>([]);
+  const [functionGroups, setFunctionGroups] = useState<Record<string, FunctionInfo[]>>({});
   const [selectedFunction, setSelectedFunction] = useState<FunctionInfo | null>(null);
   const [inputs, setInputs] = useState<Record<string, any>>({});
   const [result, setResult] = useState<any>(null);
@@ -139,6 +148,16 @@ const App: React.FC = () => {
   const [showPresetModal, setShowPresetModal] = useState(false);
   const [newPresetName, setNewPresetName] = useState('');
   const [newPresetDescription, setNewPresetDescription] = useState('');
+  
+  // Layout editor state
+  const [isLayoutEditorOpen, setIsLayoutEditorOpen] = useState(false);
+  
+  // Theme state
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  
+  // Batch processing state
+  const [showBatchModal, setShowBatchModal] = useState(false);
+  const [batchFunctions, setBatchFunctions] = useState<BatchFunction[]>([]);
   
   // Use ref to track if component is mounted to prevent state updates after unmount
   const isMountedRef = useRef(true);
@@ -162,6 +181,9 @@ const App: React.FC = () => {
           
           // Set functions from spec
           setFunctions(spec.functions || []);
+          
+          // Set function groups from spec
+          setFunctionGroups(spec.function_groups || {});
           
           // Select the first function by default if available
           if (spec.functions && spec.functions.length > 0) {
@@ -330,6 +352,27 @@ const App: React.FC = () => {
     }));
   };
 
+  // Handle layout changes
+  const handleLayoutChange = (newLayout: { containers: Container[] }) => {
+    if (selectedFunction) {
+      // Update the selected function's layout
+      setSelectedFunction(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          layout: {
+            ...prev.layout,
+            containers: newLayout.containers
+          }
+        };
+      });
+      // Close the layout editor
+      setIsLayoutEditorOpen(false);
+      // Show success message
+      alert('Layout updated successfully!');
+    }
+  };
+
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -396,110 +439,248 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="container" key={appKey}>
+    <div 
+      className="container" 
+      key={appKey}
+      style={{
+        backgroundColor: isDarkMode ? '#1a1a1a' : '#ffffff',
+        color: isDarkMode ? '#ffffff' : '#000000',
+        minHeight: '100vh'
+      }}
+    >
       <div className="app-header" key="app-header">
-        <h1>{appSpec.name}</h1>
-        <p>{appSpec.description}</p>
-      </div>
+          <div style={{ flex: 1 }}>
+            <h1>{appSpec.name}</h1>
+            <p>{appSpec.description}</p>
+          </div>
+          <button 
+            type="button" 
+            className="btn btn-secondary"
+            onClick={() => setIsDarkMode(!isDarkMode)}
+            style={{ alignSelf: 'center' }}
+          >
+            {isDarkMode ? 'Light Mode' : 'Dark Mode'}
+          </button>
+        </div>
 
       <div className="app-layout">
         {/* Function Sidebar */}
         <div className="function-sidebar">
           <h2>Functions</h2>
           <div className="function-list">
-            {functions.map(func => (
-              <div 
-                key={func.name} 
-                className={`function-item ${selectedFunction?.name === func.name ? 'selected' : ''}`}
-                onClick={() => setSelectedFunction(func)}
-              >
-                <h3>{func.display_name}</h3>
-                <p>{func.description}</p>
-              </div>
-            ))}
+            {Object.keys(functionGroups).length > 0 ? (
+              Object.entries(functionGroups).map(([groupName, groupFunctions]) => (
+                <div key={groupName} className="function-group">
+                  <h3 style={{ fontSize: '1.1em', marginBottom: '8px', color: '#666' }}>{groupName.charAt(0).toUpperCase() + groupName.slice(1)}</h3>
+                  {groupFunctions.map(func => (
+                    <div 
+                      key={func.name} 
+                      className={`function-item ${selectedFunction?.name === func.name ? 'selected' : ''}`}
+                      onClick={() => setSelectedFunction(func)}
+                      style={{ marginLeft: '16px' }}
+                    >
+                      <h3>{func.display_name}</h3>
+                      <p>{func.description}</p>
+                    </div>
+                  ))}
+                </div>
+              ))
+            ) : (
+              functions.map(func => (
+                <div 
+                  key={func.name} 
+                  className={`function-item ${selectedFunction?.name === func.name ? 'selected' : ''}`}
+                  onClick={() => setSelectedFunction(func)}
+                >
+                  <h3>{func.display_name}</h3>
+                  <p>{func.description}</p>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="main-content">
+        <div className="main-content" style={{ backgroundColor: isDarkMode ? '#2d2d2d' : 'transparent', padding: '16px', borderRadius: '8px', marginLeft: '16px' }}>
           {selectedFunction ? (
             <>
-              {/* Preset Management Section */}
-              <div className="form-section" key="preset-section">
-                <h2>Presets</h2>
-                <div className="preset-controls">
-                  <div className="preset-list">
-                    {presets.length > 0 ? (
-                      presets.map(preset => (
-                        <div key={preset.id} className="preset-item">
-                          <div className="preset-info">
-                            <h3>{preset.name}</h3>
-                            {preset.description && <p>{preset.description}</p>}
-                          </div>
-                          <div className="preset-actions">
-                            <button 
-                              type="button" 
-                              className="btn btn-secondary"
-                              onClick={() => handleLoadPreset(preset)}
-                            >
-                              Load
-                            </button>
-                            <button 
-                              type="button" 
-                              className="btn btn-danger"
-                              onClick={() => handleDeletePreset(preset.id)}
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <p>No presets saved yet.</p>
-                    )}
+              {/* Layout Editor Toggle */}
+              <div 
+                className="form-section" 
+                key="layout-editor-toggle"
+                style={{ backgroundColor: isDarkMode ? '#3d3d3d' : 'transparent', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                  <h2>{isLayoutEditorOpen ? 'Layout Editor' : selectedFunction.display_name}</h2>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button 
+                      type="button" 
+                      className="btn btn-secondary"
+                      onClick={() => setIsLayoutEditorOpen(!isLayoutEditorOpen)}
+                      style={{ 
+                        backgroundColor: isDarkMode ? '#555' : '#6c757d',
+                        color: '#fff',
+                        border: 'none',
+                        padding: '8px 16px',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {isLayoutEditorOpen ? 'Back to Form' : 'Edit Layout'}
+                    </button>
+                    <button 
+                      type="button" 
+                      className="btn btn-secondary"
+                      onClick={() => setShowBatchModal(true)}
+                      style={{ 
+                        backgroundColor: isDarkMode ? '#555' : '#6c757d',
+                        color: '#fff',
+                        border: 'none',
+                        padding: '8px 16px',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Batch Process
+                    </button>
                   </div>
-                  <button 
-                    type="button" 
-                    className="btn btn-secondary"
-                    onClick={() => setShowPresetModal(true)}
-                  >
-                    Save Current Inputs as Preset
-                  </button>
                 </div>
               </div>
 
-              <form onSubmit={handleSubmit} key="pyguizer-form">
-                {/* Render containers from selected function */}
-                {selectedFunction.layout.containers?.map((container: Container) => (
-                  <ContainerRenderer
-                    key={`container-${container.name || 'unnamed'}`}
-                    container={container}
-                    inputs={inputs}
-                    onChange={handleInputChange}
-                  />
-                ))}
+              {isLayoutEditorOpen ? (
+                <LayoutEditor 
+                  layout={selectedFunction.layout} 
+                  onLayoutChange={handleLayoutChange} 
+                />
+              ) : (
+                <>
+                  {/* Preset Management Section */}
+                  <div 
+                    className="form-section" 
+                    key="preset-section"
+                    style={{ backgroundColor: isDarkMode ? '#3d3d3d' : 'transparent', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}
+                  >
+                    <h2>Presets</h2>
+                    <div className="preset-controls">
+                      <div className="preset-list">
+                        {presets.length > 0 ? (
+                          presets.map(preset => (
+                            <div 
+                              key={preset.id} 
+                              className="preset-item"
+                              style={{ backgroundColor: isDarkMode ? '#4d4d4d' : '#f8f9fa', padding: '12px', borderRadius: '6px', marginBottom: '8px' }}
+                            >
+                              <div className="preset-info">
+                                <h3>{preset.name}</h3>
+                                {preset.description && <p>{preset.description}</p>}
+                              </div>
+                              <div className="preset-actions">
+                                <button 
+                                  type="button" 
+                                  className="btn btn-secondary"
+                                  onClick={() => handleLoadPreset(preset)}
+                                  style={{ 
+                                    backgroundColor: isDarkMode ? '#555' : '#6c757d',
+                                    color: '#fff',
+                                    border: 'none',
+                                    padding: '6px 12px',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    marginRight: '8px'
+                                  }}
+                                >
+                                  Load
+                                </button>
+                                <button 
+                                  type="button" 
+                                  className="btn btn-danger"
+                                  onClick={() => handleDeletePreset(preset.id)}
+                                  style={{ 
+                                    backgroundColor: isDarkMode ? '#721c24' : '#dc3545',
+                                    color: '#fff',
+                                    border: 'none',
+                                    padding: '6px 12px',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer'
+                                  }}
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <p>No presets saved yet.</p>
+                        )}
+                      </div>
+                      <button 
+                        type="button" 
+                        className="btn btn-secondary"
+                        onClick={() => setShowPresetModal(true)}
+                        style={{ 
+                          backgroundColor: isDarkMode ? '#555' : '#6c757d',
+                          color: '#fff',
+                          border: 'none',
+                          padding: '8px 16px',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          marginTop: '8px'
+                        }}
+                      >
+                        Save Current Inputs as Preset
+                      </button>
+                    </div>
+                  </div>
 
-                {/* For backward compatibility, render sections if containers is empty */}
-                {(!selectedFunction.layout.containers || selectedFunction.layout.containers.length === 0) && 
-                 selectedFunction.layout.sections?.map((section: Section) => (
-                  <ContainerRenderer
-                    key={`backward-section-${section.name}`}
-                    container={section}
-                    inputs={inputs}
-                    onChange={handleInputChange}
-                  />
-                ))}
+                  <form onSubmit={handleSubmit} key="pyguizer-form">
+                    {/* Render containers from selected function */}
+                    {selectedFunction.layout.containers?.map((container: Container) => (
+                      <ContainerRenderer
+                        key={`container-${container.name || 'unnamed'}`}
+                        container={container}
+                        inputs={inputs}
+                        onChange={handleInputChange}
+                        isDarkMode={isDarkMode}
+                      />
+                    ))}
 
-                <div className="form-actions" key="form-actions">
-                  <button type="submit" className="btn btn-primary" disabled={isLoading}>
-                    {isLoading ? (
-                      <> <div className="loading"></div> Running... </>
-                    ) : (
-                      'Run Function'
-                    )}
-                  </button>
-                </div>
-              </form>
+                    {/* For backward compatibility, render sections if containers is empty */}
+                    {(!selectedFunction.layout.containers || selectedFunction.layout.containers.length === 0) && 
+                     selectedFunction.layout.sections?.map((section: Section) => (
+                      <ContainerRenderer
+                        key={`backward-section-${section.name}`}
+                        container={section}
+                        inputs={inputs}
+                        onChange={handleInputChange}
+                        isDarkMode={isDarkMode}
+                      />
+                    ))}
+
+                    <div className="form-actions" key="form-actions" style={{ marginBottom: '16px' }}>
+                      <button 
+                        type="submit" 
+                        className="btn btn-primary" 
+                        disabled={isLoading}
+                        style={{ 
+                          backgroundColor: isDarkMode ? '#007bff' : '#0066cc',
+                          color: '#fff',
+                          border: 'none',
+                          padding: '10px 20px',
+                          borderRadius: '4px',
+                          cursor: isLoading ? 'not-allowed' : 'pointer',
+                          fontSize: '16px'
+                        }}
+                      >
+                        {isLoading ? (
+                          <> <div className="loading"></div> Running... </>
+                        ) : (
+                          'Run Function'
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                </>
+              )}
             </>
           ) : (
             <div className="no-function-selected">
@@ -567,6 +748,137 @@ const App: React.FC = () => {
         </div>
       )}
 
+      {/* Batch Processing Modal */}
+      {showBatchModal && (
+        <div className="modal-overlay" key="batch-modal">
+          <div className="modal" style={{ maxWidth: '800px' }}>
+            <div className="modal-header">
+              <h2>Batch Processing</h2>
+              <button 
+                type="button" 
+                className="btn-close"
+                onClick={() => setShowBatchModal(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label>Add Function to Batch</label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <select 
+                    style={{ flex: 1 }}
+                    onChange={(e) => {
+                      const funcName = e.target.value;
+                      if (funcName) {
+                        setBatchFunctions(prev => [...prev, { name: funcName, inputs: {} }]);
+                      }
+                    }}
+                  >
+                    <option value="">Select a function</option>
+                    {functions.map(func => (
+                      <option key={func.name} value={func.name}>
+                        {func.display_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              
+              <div className="form-group" style={{ marginTop: '20px' }}>
+                <label>Batch Functions ({batchFunctions.length})</label>
+                {batchFunctions.length > 0 ? (
+                  <div style={{ border: '1px solid #ddd', borderRadius: '4px', maxHeight: '300px', overflowY: 'auto' }}>
+                    {batchFunctions.map((batchFunc, index) => (
+                      <div key={index} style={{ padding: '12px', borderBottom: '1px solid #eee' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div>
+                            <h4>{batchFunc.name}</h4>
+                            <div style={{ marginTop: '8px' }}>
+                              <label>Inputs</label>
+                              <textarea
+                                style={{ width: '100%', height: '100px', marginTop: '4px' }}
+                                value={JSON.stringify(batchFunc.inputs, null, 2)}
+                                onChange={(e) => {
+                                  try {
+                                    const newInputs = JSON.parse(e.target.value);
+                                    const updatedFunctions = [...batchFunctions];
+                                    updatedFunctions[index] = { ...batchFunc, inputs: newInputs };
+                                    setBatchFunctions(updatedFunctions);
+                                  } catch (error) {
+                                    // Ignore invalid JSON
+                                  }
+                                }}
+                                placeholder='Enter JSON inputs'
+                              />
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setBatchFunctions(prev => prev.filter((_, i) => i !== index));
+                            }}
+                            style={{ 
+                              backgroundColor: '#dc3545',
+                              color: '#fff',
+                              border: 'none',
+                              padding: '4px 8px',
+                              borderRadius: '4px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p>No functions added to batch</p>
+                )}
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button 
+                type="button" 
+                className="btn btn-secondary"
+                onClick={() => setShowBatchModal(false)}
+              >
+                Cancel
+              </button>
+              <button 
+                type="button" 
+                className="btn btn-primary"
+                onClick={async () => {
+                  if (batchFunctions.length === 0) {
+                    alert('Please add at least one function to the batch');
+                    return;
+                  }
+                  
+                  try {
+                    const batchRequest: BatchRequest = {
+                      functions: batchFunctions
+                    };
+                    const response = await runBatch(batchRequest);
+                    setShowBatchModal(false);
+                    setBatchFunctions([]);
+                    // Set the task ID to track progress
+                    setTaskId(response.batch_id);
+                    setTaskStatus(response.status);
+                  } catch (error) {
+                    console.error('Error running batch:', error);
+                    alert('Error running batch. Please check the console for details.');
+                  }
+                }}
+                disabled={batchFunctions.length === 0}
+              >
+                Run Batch
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Task Progress */}
       {isLoading && taskStatus && (
         <div className="result-section" key="task-progress" style={{ borderLeftColor: '#3498db', backgroundColor: '#ebf5fb' }}>
@@ -615,7 +927,28 @@ const App: React.FC = () => {
             {result === null ? (
               'null'
             ) : typeof result === 'object' ? (
-              JSON.stringify(result, null, 2)
+              <>
+                {/* Check if result is suitable for chart visualization */}
+                {(
+                  (Array.isArray(result) && result.length > 0 && (
+                    result.every(item => typeof item === 'number') ||
+                    (result.every(item => typeof item === 'object' && item !== null) && Object.keys(result[0]).length === 2)
+                  )) ||
+                  (typeof result === 'object' && Object.keys(result).length > 0 && 
+                   Object.values(result).every(val => typeof val === 'number'))
+                ) ? (
+                  <div>
+                    <h3>Visualization</h3>
+                    <Chart data={result} />
+                    <h3>Raw Data</h3>
+                    <pre style={{ backgroundColor: '#f5f5f5', padding: '12px', borderRadius: '6px', overflow: 'auto' }}>
+                      {JSON.stringify(result, null, 2)}
+                    </pre>
+                  </div>
+                ) : (
+                  JSON.stringify(result, null, 2)
+                )}
+              </>
             ) : (
               <ReactMarkdown
                 rehypePlugins={[rehypeRaw, rehypeSanitize]}

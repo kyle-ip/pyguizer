@@ -42,6 +42,7 @@ flake8-pyproject = "^1.2.3"  # Enable flake8 to read pyproject.toml config
 httpx = "^0.25.2"
 pytest-cov = "^4.1.0"
 pytest-mock = "^3.12.0"
+pytest-asyncio = "^0.21.1"  # For testing async functions
 bandit = "^1.7.5"  # Vulnerability scanning
 autoflake = "^2.2.2"  # Auto-fix unused imports
 pylint = "^3.0.0"  # Code quality analysis

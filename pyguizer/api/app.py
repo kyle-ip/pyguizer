@@ -81,6 +81,28 @@ class PresetResponse(BaseModel):
     updated_at: Optional[float] = Field(None)
 
 
+class BatchFunction(BaseModel):
+    """Model for a function in a batch request."""
+
+    name: str = Field(..., description="Function name")
+    inputs: Dict[str, Any] = Field(default_factory=dict, description="Function inputs")
+
+
+class BatchRequest(BaseModel):
+    """Request model for batch processing."""
+
+    functions: List[BatchFunction] = Field(
+        ..., description="List of functions to run in batch"
+    )
+
+
+class BatchResponse(BaseModel):
+    """Response model for batch processing."""
+
+    batch_id: str = Field(...)
+    status: TaskStatus = Field(...)
+
+
 class AppSpec(BaseModel):
     """Application specification model."""
 
@@ -155,6 +177,7 @@ class TaskManager:
     def update_task(self, task_id: str, **kwargs):
         """Update task information."""
         import json
+
         task = self.get_task(task_id)
         task.update(kwargs)
         # Create a safe copy of the task for broadcasting (serialize result to break circular references)
@@ -162,7 +185,9 @@ class TaskManager:
         if task_copy.get("result") is not None:
             try:
                 # Serialize the result to JSON and back to break circular references
-                task_copy["result"] = json.loads(json.dumps(task_copy["result"], default=str))
+                task_copy["result"] = json.loads(
+                    json.dumps(task_copy["result"], default=str)
+                )
             except Exception as e:
                 # Fallback to string conversion if serialization fails
                 task_copy["result"] = str(task_copy["result"])
@@ -179,6 +204,7 @@ class TaskManager:
     def cancel_task(self, task_id: str):
         """Cancel a running task."""
         import json
+
         task = self.get_task(task_id)
         task["cancelled"] = True
         task["status"] = TaskStatus.CANCELLED
@@ -224,8 +250,14 @@ class PyGUIzerApp:
         if func:
             self.register_function(func)
 
-    def register_function(self, func, layout=None):
-        """Register a new function with the application."""
+    def register_function(self, func, layout=None, group="default"):
+        """Register a new function with the application.
+
+        Args:
+            func: The function to register
+            layout: Optional layout configuration for the function
+            group: Optional group/category for the function
+        """
         # Introspect the function
         func_info = introspect_function(func)
 
@@ -242,31 +274,52 @@ class PyGUIzerApp:
             "func_info": func_info,
             "wsos": wsos,
             "ui_layout": function_layout,
+            "group": group,
         }
 
     def get_app_spec(self) -> Dict[str, Any]:
         """Get the application specification."""
         # Build function specs for all registered functions
         functions = []
+        function_groups = {}
+
         for func_name, func_data in self.function_registry.items():
             # Extract only the necessary information without complex type objects
-            functions.append(
-                {
-                    "name": func_name,
-                    "display_name": func_data["func_info"]["name"],
-                    "description": func_data["func_info"]["docstring"],
-                    "layout": func_data["ui_layout"],
-                }
-            )
+            func_spec = {
+                "name": func_name,
+                "display_name": func_data["func_info"]["name"],
+                "description": func_data["func_info"]["docstring"],
+                "layout": func_data["ui_layout"],
+                "group": func_data.get("group", "default"),
+            }
+            functions.append(func_spec)
+
+            # Organize functions by group
+            group = func_data.get("group", "default")
+            if group not in function_groups:
+                function_groups[group] = []
+            function_groups[group].append(func_spec)
 
         return {
             "name": self.name,
             "description": self.description,
             "functions": functions,
+            "function_groups": function_groups,
         }
 
-    def run_function(self, func_name: str, inputs: Dict[str, Any]) -> Any:
-        """Run a registered function with provided inputs."""
+    async def run_function(self, func_name: str, inputs: Dict[str, Any]) -> Any:
+        """Run a registered function with provided inputs.
+
+        Args:
+            func_name: The name of the function to run
+            inputs: The inputs to pass to the function
+
+        Returns:
+            The result of the function execution
+
+        Raises:
+            HTTPException: If the function is not found or execution fails
+        """
         if func_name not in self.function_registry:
             raise HTTPException(
                 status_code=404, detail=f"Function '{func_name}' not found"
@@ -274,7 +327,13 @@ class PyGUIzerApp:
 
         func = self.function_registry[func_name]["func"]
         try:
-            return func(**inputs)
+            # Check if the function is async
+            if asyncio.iscoroutinefunction(func):
+                return await func(**inputs)
+            else:
+                # Run sync function in executor
+                loop = asyncio.get_event_loop()
+                return await loop.run_in_executor(None, lambda: func(**inputs))
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 
@@ -362,7 +421,7 @@ async def execute_task(
                 return
 
         # Run the actual function
-        result = pyguizer_app.run_function(func_name, inputs)
+        result = await pyguizer_app.run_function(func_name, inputs)
 
         # Update task status to success
         task_manager.update_task(
@@ -416,30 +475,37 @@ def create_app(pyguizer_app=None, func=None, layout=None):
     @app.get("/api/spec")
     async def get_spec():
         """Get the application specification."""
-        import logging
         import json
+        import logging
+
         logger = logging.getLogger(__name__)
         try:
             spec = pyguizer_app.get_app_spec()
             # Create a copy of the spec to avoid modifying the original
             spec_copy = json.loads(json.dumps(spec, default=str))
-            logger.info(f"Successfully generated spec with {len(spec_copy.get('functions', []))} functions")
+            logger.info(
+                f"Successfully generated spec with {len(spec_copy.get('functions', []))} functions"
+            )
             return spec_copy
         except Exception as e:
             logger.error(f"Error generating spec: {str(e)}", exc_info=True)
-            raise HTTPException(status_code=500, detail=f"Failed to generate spec: {str(e)}")
-    
+            raise HTTPException(
+                status_code=500, detail=f"Failed to generate spec: {str(e)}"
+            )
+
     @app.post("/api/shutdown")
     async def shutdown():
         """Shutdown the server."""
         import logging
         import os
         import signal
+
         logger = logging.getLogger(__name__)
         logger.info("Shutdown requested")
         # For Windows, we'll use a different approach since os.kill with signal.SIGTERM doesn't work the same
-        if os.name == 'nt':  # Windows
+        if os.name == "nt":  # Windows
             import subprocess
+
             subprocess.Popen("taskkill /F /PID {}".format(os.getpid()), shell=True)
         else:  # Unix-like
             os.kill(os.getpid(), signal.SIGTERM)
@@ -562,6 +628,7 @@ def create_app(pyguizer_app=None, func=None, layout=None):
         """Get task information by ID."""
         import json
         import logging
+
         logger = logging.getLogger(__name__)
         try:
             task = task_manager.get_task(task_id)
@@ -571,7 +638,9 @@ def create_app(pyguizer_app=None, func=None, layout=None):
             if task_copy.get("result") is not None:
                 try:
                     # Serialize the result to JSON and back to break circular references
-                    task_copy["result"] = json.loads(json.dumps(task_copy["result"], default=str))
+                    task_copy["result"] = json.loads(
+                        json.dumps(task_copy["result"], default=str)
+                    )
                 except Exception as e:
                     logger.error(f"Error serializing result: {str(e)}", exc_info=True)
                     task_copy["result"] = str(task_copy["result"])
@@ -586,10 +655,89 @@ def create_app(pyguizer_app=None, func=None, layout=None):
         task_manager.cancel_task(task_id)
         return {"status": "cancelled"}
 
+    @app.post("/api/batch", response_model=BatchResponse)
+    async def run_batch(request: BatchRequest):
+        """Run multiple functions in batch."""
+        import json
+
+        try:
+            functions = request.functions
+            if not functions:
+                raise HTTPException(
+                    status_code=400, detail="No functions provided for batch processing"
+                )
+
+            # Create a batch task
+            batch_task_id = task_manager.create_task()
+            task_manager.update_task(
+                batch_task_id,
+                status=TaskStatus.RUNNING,
+                started_at=time.time(),
+                progress=0.0,
+                message=f"Starting batch processing of {len(functions)} functions",
+            )
+
+            # Process functions concurrently
+            results = []
+            total_functions = len(functions)
+
+            # Create tasks for each function
+            async def process_function(i, func_data):
+                func_name = func_data.name
+                inputs = func_data.inputs
+
+                try:
+                    # Run the function
+                    result = await pyguizer_app.run_function(func_name, inputs)
+                    return i, {"function": func_name, "result": result}
+                except Exception as e:
+                    return i, {"function": func_name, "error": str(e)}
+
+            # Create and run all tasks concurrently
+            tasks = [
+                process_function(i, func_data) for i, func_data in enumerate(functions)
+            ]
+            function_results = await asyncio.gather(*tasks)
+
+            # Sort results by original order
+            function_results.sort(key=lambda x: x[0])
+            results = [result for _, result in function_results]
+
+            # Update batch progress to complete
+            task_manager.update_task(
+                batch_task_id,
+                progress=1.0,
+                message=f"Processed all {total_functions} functions concurrently",
+            )
+
+            # Update batch task status
+            task_manager.update_task(
+                batch_task_id,
+                status=TaskStatus.SUCCESS,
+                completed_at=time.time(),
+                progress=1.0,
+                message=f"Batch processing completed: {total_functions} functions",
+                result=results,
+            )
+
+            return BatchResponse(batch_id=batch_task_id, status=TaskStatus.SUCCESS)
+        except Exception as e:
+            # Handle batch processing error
+            if "batch_task_id" in locals():
+                task_manager.update_task(
+                    batch_task_id,
+                    status=TaskStatus.FAILED,
+                    completed_at=time.time(),
+                    error=str(e),
+                    message="Batch processing failed",
+                )
+            raise HTTPException(status_code=500, detail=str(e))
+
     @app.websocket("/api/tasks/{task_id}/stream")
     async def websocket_endpoint(websocket: WebSocket, task_id: str):
         """WebSocket endpoint for real-time task updates."""
         import json
+
         # Check if task exists
         task_manager.get_task(task_id)
 
@@ -604,7 +752,9 @@ def create_app(pyguizer_app=None, func=None, layout=None):
             # Ensure proper JSON serialization (same as update_task method)
             if task_copy.get("result") is not None:
                 try:
-                    task_copy["result"] = json.loads(json.dumps(task_copy["result"], default=str))
+                    task_copy["result"] = json.loads(
+                        json.dumps(task_copy["result"], default=str)
+                    )
                 except Exception as e:
                     task_copy["result"] = str(task_copy["result"])
             # Convert enum values to strings explicitly for consistent serialization

@@ -49,11 +49,16 @@ if __name__ == "__main__":
     for func in pyguizer.registered_functions:
         print(f"  - {func.__name__}: {func.__doc__.splitlines()[0]}")
     print("\nTo run the app directly:")
-    print("  python examples/simple_deploy_example.py")
+    print("  python examples/simple_deploy.py")
     print("\nTo package into a standalone executable:")
-    print("  python -m pyguizer package examples/simple_deploy_example.py")
+    print("  python -m pyguizer package examples/simple_deploy.py")
     print("\nTo run with PyGUIzer CLI:")
-    print("  python -m pyguizer run examples/simple_deploy_example.py")
+    print("  python -m pyguizer run examples/simple_deploy.py")
+    print("\nTo run with Docker:")
+    print("  docker-compose up --build")
+    print("\nTo run with Docker (manual build):")
+    print("  docker build -t pyguizer .")
+    print("  docker run -p 8000:8000 pyguizer")
     
     # Run the server
     pyguizer.run(title="Simple PyGUIzer Example", port=8000)

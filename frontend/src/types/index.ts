@@ -70,6 +70,13 @@ export interface AppSpec {
   name: string;
   description: string;
   functions: FunctionInfo[];
+  function_groups?: Record<string, FunctionInfo[]>;
+}
+
+// Function group information
+export interface FunctionGroup {
+  name: string;
+  functions: FunctionInfo[];
 }
 
 // Function output information
@@ -89,6 +96,7 @@ export interface FunctionInfo {
     sections?: Section[];
     containers: Container[];
   };
+  group?: string;
 }
 
 // Run request

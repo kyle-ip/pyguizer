@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
+venv/
+env/
+.env/
+*.venv/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+*.coverage
+coverage.xml
+.pytest_cache/
+
+# Distribution
+*.egg-info/
+dist/
+build/

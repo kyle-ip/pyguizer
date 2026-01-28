@@ -4,8 +4,24 @@ import {
   RunRequest, 
   RunResponse, 
   TaskInfo,
-  FunctionInfo
+  FunctionInfo,
+  TaskStatus
 } from '../types/index';
+
+// Batch processing types
+export interface BatchFunction {
+  name: string;
+  inputs: Record<string, any>;
+}
+
+export interface BatchRequest {
+  functions: BatchFunction[];
+}
+
+export interface BatchResponse {
+  batch_id: string;
+  status: TaskStatus;
+}
 
 const API_BASE_URL = '/api';
 
@@ -102,6 +118,12 @@ export const updatePreset = async (presetId: string, preset: PresetUpdate): Prom
 // Delete a preset
 export const deletePreset = async (presetId: string): Promise<void> => {
   await api.delete(`/presets/${presetId}`);
+};
+
+// Run batch processing
+export const runBatch = async (request: BatchRequest): Promise<BatchResponse> => {
+  const response = await api.post('/batch', request);
+  return response.data;
 };
 
 // WebSocket manager for real-time updates

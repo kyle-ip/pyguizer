@@ -24,11 +24,18 @@ class PyGUIzer:
         if func not in self.functions:
             self.functions.append(func)
         return func
-    
-    def register_function(self, func):
-        """Register a function with this PyGUIzer instance."""
+
+    def register_function(self, func, group="default"):
+        """Register a function with this PyGUIzer instance.
+
+        Args:
+            func: The function to register
+            group: Optional group/category for the function
+        """
         # Store a reference to this PyGUIzer instance on the function
         func.__pyguizer__ = self
+        # Store group information on the function
+        func.__pyguizer_group__ = group
         # Add to registered functions list if not already present
         if func not in PyGUIzer.registered_functions:
             PyGUIzer.registered_functions.append(func)
@@ -63,9 +70,11 @@ class PyGUIzer:
         for func in cls.registered_functions:
             # Get the PyGUIzer instance from the function
             pyguizer_instance = getattr(func, "__pyguizer__", None)
-            # Register the function with its layout
+            # Get the group from the function
+            group = getattr(func, "__pyguizer_group__", "default")
+            # Register the function with its layout and group
             pyguizer_app.register_function(
-                func, pyguizer_instance.layout if pyguizer_instance else None
+                func, pyguizer_instance.layout if pyguizer_instance else None, group
             )
 
         # Create FastAPI app with the pre-configured PyGUIzerApp instance
@@ -87,7 +96,7 @@ class PyGUIzer:
         print(f"API documentation available at http://{host}:{port}/docs")
         print("\nPress Ctrl+C to stop the server")
         uvicorn.run(app, host=host, port=port)
-    
+
     def register_function(self, func):
         """Register a function with this PyGUIzer instance."""
         # Store a reference to this PyGUIzer instance on the function
