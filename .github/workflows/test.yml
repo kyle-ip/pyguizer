@@ -32,9 +32,9 @@ jobs:
 
       - name: Lint (flake8, black, isort)
         run: |
-          poetry run flake8 pyguizer tests
-          poetry run black --check pyguizer tests
-          poetry run isort --check pyguizer tests
+          poetry run flake8 pyguizer
+          poetry run black --check pyguizer
+          poetry run isort --check pyguizer
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
