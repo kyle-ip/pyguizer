@@ -5,9 +5,9 @@ name: Quick Validate
 
 on:
   push:
-    branches: [main, feat/test_automation]
+    branches: [main, feat/pipeline]
   pull_request:
-    branches: [main, feat/test_automation]
+    branches: [main, feat/pipeline]
 
 jobs:
   quick-validate:

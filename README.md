@@ -18,6 +18,7 @@ Automatically generate interactive, production-ready web GUI applications from s
 - **Smart Auto-Registration**: Works with any Python file without requiring explicit `@PyGUIzer()` decorators
 - **Async Function Support**: Native support for both sync and async Python functions
 - **Concurrent Processing**: Batch requests are processed concurrently for improved performance
+- **Pipeline Support**: Create complex workflows by connecting multiple functions in directed acyclic graphs (DAGs)
 
 ### User Experience
 - **Preset Management**: Save and load input configurations
@@ -51,6 +52,7 @@ Automatically generate interactive, production-ready web GUI applications from s
 - [File Uploads](docs/features/widgets.md#file-upload-widget): Handling file uploads with progress tracking
 - [Color Picker](docs/features/widgets.md#color-picker-widget): Using color picker widgets
 - [Date/Time Pickers](docs/features/widgets.md#date-time-pickers): Working with date and time selection
+- [Pipelines](docs/features/pipelines.md): Create and execute complex workflows by connecting multiple functions
 
 ### Deployment
 - [Packaging](docs/deployment/index.md#packaging-as-standalone-executable): Creating standalone executables

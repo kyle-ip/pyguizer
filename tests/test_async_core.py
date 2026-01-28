@@ -136,43 +136,49 @@ except Exception as e:
 try:
     import asyncio
 
-    async def test_async_execution():
+    def test_async_execution():
         """Test async execution of both sync and async functions."""
-        # Create a PyGUIzerApp instance
-        from pyguizer.api.app import PyGUIzerApp
 
-        app = PyGUIzerApp()
-        app.register_function(sync_function)
-        app.register_function(async_function)
-        app.register_function(async_data_processor)
+        async def run_test():
+            # Create a PyGUIzerApp instance
+            from pyguizer.api.app import PyGUIzerApp
 
-        # Test sync function
-        sync_result = await app.run_function("sync_function", {"x": 10, "y": 20})
-        assert sync_result == 30, f"Sync function should return 30, got {sync_result}"
+            app = PyGUIzerApp()
+            app.register_function(sync_function)
+            app.register_function(async_function)
+            app.register_function(async_data_processor)
 
-        # Test async function
-        async_result = await app.run_function("async_function", {"x": 5, "y": 6})
-        assert (
-            async_result == 30
-        ), f"Async function should return 30, got {async_result}"
+            # Test sync function
+            sync_result = await app.run_function("sync_function", {"x": 10, "y": 20})
+            assert (
+                sync_result == 30
+            ), f"Sync function should return 30, got {sync_result}"
 
-        # Test async function with complex return type
-        data_result = await app.run_function(
-            "async_data_processor", {"data": [1, 2, 3, 4, 5]}
-        )
-        assert (
-            data_result["sum"] == 15
-        ), f"Async data processor should return sum 15, got {data_result['sum']}"
+            # Test async function
+            async_result = await app.run_function("async_function", {"x": 5, "y": 6})
+            assert (
+                async_result == 30
+            ), f"Async function should return 30, got {async_result}"
 
-        return True
+            # Test async function with complex return type
+            data_result = await app.run_function(
+                "async_data_processor", {"data": [1, 2, 3, 4, 5]}
+            )
+            assert (
+                data_result["sum"] == 15
+            ), f"Async data processor should return sum 15, got {data_result['sum']}"
 
-    # Run the async test
-    success = asyncio.run(test_async_execution())
-    if success:
-        print("✓ Async function execution works for both sync and async functions")
-    else:
-        print("✗ Async function execution failed")
-        sys.exit(1)
+            return True
+
+        # Run the async test
+        success = asyncio.run(run_test())
+        if success:
+            print("✓ Async function execution works for both sync and async functions")
+        else:
+            print("✗ Async function execution failed")
+            sys.exit(1)
+
+    test_async_execution()
 except Exception as e:
     print(f"✗ Failed async function execution: {e}")
     import traceback

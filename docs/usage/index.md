@@ -505,6 +505,86 @@ Batch requests are now processed concurrently for improved performance:
 - **Better resource utilization**: Efficient use of system resources
 - **Order preservation**: Results are returned in the original request order
 
+## Pipeline Usage
+
+PyGUIzer now supports creating and executing pipelines of functions. Here's how to work with pipelines through the API:
+
+### Creating a Pipeline
+
+```bash
+curl -X POST http://localhost:8000/api/pipelines \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Data Processing Pipeline",
+    "description": "Process data through multiple steps"
+  }'
+```
+
+### Adding Nodes
+
+```bash
+# Add first node
+curl -X POST http://localhost:8000/api/pipelines/{pipeline_id}/nodes \
+  -H "Content-Type: application/json" \
+  -d '{
+    "function_name": "add",
+    "node_name": "Add Numbers",
+    "parameters": {"a": 10, "b": 20}
+  }'
+
+# Add second node
+curl -X POST http://localhost:8000/api/pipelines/{pipeline_id}/nodes \
+  -H "Content-Type: application/json" \
+  -d '{
+    "function_name": "multiply",
+    "node_name": "Multiply Result",
+    "parameters": {"y": 2}
+  }'
+```
+
+### Connecting Nodes
+
+```bash
+curl -X POST http://localhost:8000/api/pipelines/{pipeline_id}/connections \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source_node_id": "{first-node-id}",
+    "source_output": "result",
+    "target_node_id": "{second-node-id}",
+    "target_input": "x"
+  }'
+```
+
+### Executing a Pipeline
+
+```bash
+curl -X POST http://localhost:8000/api/pipelines/{pipeline_id}/execute \
+  -H "Content-Type: application/json" \
+  -d '{
+    "execution_mode": "parallel",
+    "run_async": true
+  }'
+```
+
+### Monitoring Execution
+
+You can monitor pipeline execution status through WebSockets:
+
+```javascript
+const ws = new WebSocket(`ws://localhost:8000/api/tasks/{execution_id}/stream`);
+
+ws.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  if (data.type === 'task_update') {
+    console.log('Execution status:', data.task.status);
+    console.log('Progress:', (data.task.progress * 100).toFixed(2) + '%');
+    if (data.task.status === 'success') {
+      console.log('Execution result:', data.task.result);
+    }
+  }
+};
+```
+
 ## Best Practices
 
 ### For Async Functions
@@ -518,3 +598,11 @@ Batch requests are now processed concurrently for improved performance:
 1. **Group related functions** in batch requests to take advantage of concurrency
 2. **Limit batch size** to avoid overwhelming system resources
 3. **Handle errors gracefully** as each function in a batch runs independently
+
+### For Pipelines
+
+1. **Validate pipelines** before execution to catch errors early
+2. **Use meaningful node names** for better visualization and debugging
+3. **Leverage parallel execution** for independent functions
+4. **Monitor execution status** through WebSockets for real-time updates
+5. **Keep pipelines focused** on specific workflows for better maintainability

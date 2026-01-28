@@ -6,6 +6,7 @@ that can be easily packaged into a standalone executable.
 """
 
 from typing import List, Optional
+
 from pyguizer import PyGUIzer
 
 # Create a PyGUIzer instance
@@ -13,7 +14,9 @@ pyguizer = PyGUIzer()
 
 
 @pyguizer
-def greet(name: str, age: int, hobbies: List[str] = None, is_active: bool = True) -> str:
+def greet(
+    name: str, age: int, hobbies: List[str] = None, is_active: bool = True
+) -> str:
     """Generate a personalized greeting message."""
     hobbies_str = f" and enjoy {', '.join(hobbies)}" if hobbies else ""
     status_str = "active" if is_active else "inactive"
@@ -21,7 +24,9 @@ def greet(name: str, age: int, hobbies: List[str] = None, is_active: bool = True
 
 
 @pyguizer
-def calculate_discount(price: float, discount_percentage: float, is_vip: bool = False) -> float:
+def calculate_discount(
+    price: float, discount_percentage: float, is_vip: bool = False
+) -> float:
     """Calculate the final price after applying discounts."""
     base_discount = price * (discount_percentage / 100)
     vip_bonus = price * 0.05 if is_vip else 0
@@ -34,7 +39,7 @@ def calculate_discount(price: float, discount_percentage: float, is_vip: bool = 
 def convert_temperature(celsius: float, to_unit: str = "fahrenheit") -> float:
     """Convert temperature between Celsius and Fahrenheit."""
     if to_unit.lower() == "fahrenheit":
-        return (celsius * 9/5) + 32
+        return (celsius * 9 / 5) + 32
     elif to_unit.lower() == "celsius":
         return celsius
     else:
@@ -59,6 +64,6 @@ if __name__ == "__main__":
     print("\nTo run with Docker (manual build):")
     print("  docker build -t pyguizer .")
     print("  docker run -p 8000:8000 pyguizer")
-    
+
     # Run the server
     pyguizer.run(title="Simple PyGUIzer Example", port=8000)

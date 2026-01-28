@@ -8,9 +8,9 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main, feat/test_automation]
+    branches: [main, feat/pipeline]
   pull_request:
-    branches: [main, feat/test_automation]
+    branches: [main, feat/pipeline]
   schedule:
     - cron: "0 0 0 * * *"  # Daily vulnerability scan
 

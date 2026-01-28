@@ -81,25 +81,36 @@ def run(
         if not pyguizer_instances:
             # No PyGUIzer-decorated functions found, auto-register all callable functions
             from pyguizer import PyGUIzer
-            typer.echo(f"Info: No PyGUIzer-decorated functions found, auto-registering all callable functions in {file_path}")
-            
+
+            typer.echo(
+                f"Info: No PyGUIzer-decorated functions found, auto-registering all callable functions in {file_path}"
+            )
+
             # Create a new PyGUIzer instance
             auto_pyguizer = PyGUIzer()
-            
+
             # Register all callable functions from the module
             for name, obj in module.__dict__.items():
-                if callable(obj) and not name.startswith('_'):  # Skip private functions
+                if callable(obj) and not name.startswith("_"):  # Skip private functions
                     try:
                         # Check if it's a built-in function or imported function
-                        if hasattr(obj, '__module__') and obj.__module__ == module.__name__:
+                        if (
+                            hasattr(obj, "__module__")
+                            and obj.__module__ == module.__name__
+                        ):
                             auto_pyguizer.register_function(obj)
                             decorated_functions.append(name)
                     except Exception as e:
-                        typer.echo(f"Warning: Could not register function {name}: {e}", err=True)
-            
+                        typer.echo(
+                            f"Warning: Could not register function {name}: {e}",
+                            err=True,
+                        )
+
             if decorated_functions:
                 pyguizer_instances = [auto_pyguizer]
-                typer.echo(f"Info: Auto-registered {len(decorated_functions)} functions: {', '.join(decorated_functions)}")
+                typer.echo(
+                    f"Info: Auto-registered {len(decorated_functions)} functions: {', '.join(decorated_functions)}"
+                )
             else:
                 # Try one more approach - check all functions in the module
                 for name, obj in module.__dict__.items():
@@ -109,10 +120,12 @@ def run(
                             decorated_functions.append(name)
                         except Exception as e:
                             continue
-                
+
                 if decorated_functions:
                     pyguizer_instances = [auto_pyguizer]
-                    typer.echo(f"Info: Auto-registered {len(decorated_functions)} functions: {', '.join(decorated_functions)}")
+                    typer.echo(
+                        f"Info: Auto-registered {len(decorated_functions)} functions: {', '.join(decorated_functions)}"
+                    )
                 else:
                     typer.echo(
                         f"Error: No callable functions found in {file_path}", err=True
@@ -310,19 +323,19 @@ def init(
 @app.command(name="package")
 def package(file_path: str):
     """Package a PyGUIzer application into a standalone executable."""
-    import sys
-    import subprocess
     import os
-    
+    import subprocess
+    import sys
+
     typer.echo(f"📦 Packaging PyGUIzer application from {file_path}...")
-    
+
     # Get the path to the deployment script
     deploy_script = os.path.join(os.path.dirname(__file__), "../scripts/deploy.py")
     deploy_script = os.path.abspath(deploy_script)
-    
+
     # Run the deployment script as a subprocess
     result = subprocess.run([sys.executable, deploy_script, file_path], check=False)
-    
+
     if result.returncode == 0:
         typer.echo("✅ Packaging completed successfully!")
     else:
