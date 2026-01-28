@@ -11,12 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from pyguizer.api.dependencies import get_pyguizer_app, get_task_manager
 from pyguizer.api.endpoints import api_router
 from pyguizer.api.examples import BATCH_EXAMPLES, RUN_EXAMPLES
-from pyguizer.api.models import (
-    BatchRequest,
-    BatchResponse,
-    RunRequest,
-    RunResponse,
-)
+from pyguizer.api.models import BatchRequest, BatchResponse, RunRequest, RunResponse
 from pyguizer.api.services.pyguizer_app import PyGUIzerApp
 from pyguizer.api.services.task_manager import TaskManager
 
@@ -271,7 +266,8 @@ def create_app(pyguizer_app=None, func=None, layout=None):
 
             @app.get("/")
             async def root():
-                return HTMLResponse("""
+                return HTMLResponse(
+                    """
                     <html>
                         <head>
                             <title>PyGUIzer</title>
@@ -282,7 +278,8 @@ def create_app(pyguizer_app=None, func=None, layout=None):
                             <p>Please build the frontend or check the installation.</p>
                         </body>
                     </html>
-                    """)
+                    """
+                )
 
     except Exception as e:
         print(f"Error mounting static files: {e}")
@@ -291,7 +288,8 @@ def create_app(pyguizer_app=None, func=None, layout=None):
 
         @app.get("/")
         async def root():
-            return HTMLResponse("""
+            return HTMLResponse(
+                """
                 <html>
                     <head>
                         <title>PyGUIzer</title>
@@ -301,7 +299,8 @@ def create_app(pyguizer_app=None, func=None, layout=None):
                         <p>Static files not available.</p>
                     </body>
                 </html>
-                """)
+                """
+            )
 
     return app
 
