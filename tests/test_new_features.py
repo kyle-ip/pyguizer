@@ -107,9 +107,7 @@ if __name__ == "__main__":
             if actual_type == expected_type:
                 print(f"   ✅ {param_name}: Correctly mapped to {expected_type}")
             else:
-                print(
-                    f"   ❌ {param_name}: Expected {expected_type}, got {actual_type}"
-                )
+                print(f"   ❌ {param_name}: Expected {expected_type}, got {actual_type}")
 
     except Exception as e:
         print(f"   ❌ WSO generation failed: {e}")

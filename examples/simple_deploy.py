@@ -5,7 +5,7 @@ This example shows how to create a basic PyGUIzer application
 that can be easily packaged into a standalone executable.
 """
 
-from typing import List, Optional
+from typing import List
 
 from pyguizer import PyGUIzer
 

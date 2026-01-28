@@ -3,11 +3,7 @@
 # flake8: noqa: E501
 import importlib.util
 import os
-import shutil
-import subprocess
 import sys
-import tempfile
-from typing import Optional
 
 import typer
 import uvicorn
@@ -118,7 +114,7 @@ def run(
                         try:
                             auto_pyguizer.register_function(obj)
                             decorated_functions.append(name)
-                        except Exception as e:
+                        except Exception:
                             continue
 
                 if decorated_functions:
