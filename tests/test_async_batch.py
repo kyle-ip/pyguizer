@@ -30,7 +30,8 @@ def test_async_batch():
                     if response.status == 200:
                         result = await response.json()
                         print(
-                            f"Batch request sent successfully. Batch ID: {result['batch_id']}"
+                            f"Batch request sent successfully. Batch ID: "
+                            f"{result['batch_id']}"
                         )
 
                         # Wait a bit for processing to complete
@@ -43,9 +44,10 @@ def test_async_batch():
                         async with session.get(batch_status_url) as status_response:
                             if status_response.status == 200:
                                 batch_status = await status_response.json()
-                                print(
-                                    f"\nBatch processing completed in {asyncio.get_event_loop().time() - start_time:.2f} seconds"
-                                )
+                                event_loop = asyncio.get_event_loop()
+                                elapsed_time = event_loop.time() - start_time
+                                print("\nBatch processing completed in")
+                                print(f"{elapsed_time:.2f} seconds")
                                 print(f"Status: {batch_status['status']}")
                                 print(f"Progress: {batch_status['progress']}")
                                 print(f"Message: {batch_status['message']}")
@@ -53,13 +55,15 @@ def test_async_batch():
                                 for item in batch_status["result"]:
                                     if "error" in item:
                                         print(
-                                            f"{item['function']}: ERROR - {item['error']}"
+                                            f"{item['function']}: ERROR - "
+                                            f"{item['error']}"
                                         )
                                     else:
                                         print(f"{item['function']}: {item['result']}")
                             else:
                                 print(
-                                    f"Failed to get batch status: {status_response.status}"
+                                    f"Failed to get batch status: "
+                                    f"{status_response.status}"
                                 )
                     else:
                         print(f"Failed to send batch request: {response.status}")

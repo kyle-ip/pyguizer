@@ -74,7 +74,8 @@ try:
         async_function, "__pyguizer__"
     ), "Async function should have __pyguizer__ attribute"
     print(
-        "✓ Decorator correctly adds __pyguizer__ attribute to both sync and async functions"
+        "✓ Decorator correctly adds __pyguizer__ attribute to both "
+        "sync and async functions"
     )
 except AssertionError as e:
     print(f"✗ {e}")
@@ -134,8 +135,6 @@ except Exception as e:
 
 # Test async function execution
 try:
-    import asyncio
-
     def test_async_execution():
         """Test async execution of both sync and async functions."""
 
