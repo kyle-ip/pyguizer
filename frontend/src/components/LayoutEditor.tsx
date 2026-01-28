@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
-import { Container, WidgetSpec } from '../types/index';
+import { Container } from '../types/index';
 
 interface LayoutEditorProps {
   layout: { containers: Container[] };
@@ -45,7 +45,7 @@ interface DroppableAreaProps {
 const DroppableArea: React.FC<DroppableAreaProps> = ({ id, type, onDrop, children }) => {
   const [{ isOver }, drop] = useDrop(() => ({
     accept: type,
-    drop: (item) => onDrop(item, id),
+    drop: (item: { id: string; type: string }) => onDrop(item, id),
     collect: (monitor) => ({
       isOver: monitor.isOver(),
     }),

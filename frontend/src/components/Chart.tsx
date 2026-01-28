@@ -10,7 +10,6 @@ import {
   Title,
   Tooltip,
   Legend,
-  ChartOptions,
 } from 'chart.js';
 import { Line, Bar, Pie, Doughnut } from 'react-chartjs-2';
 
@@ -90,11 +89,11 @@ const Chart: React.FC<ChartProps> = ({ data, type = 'line', title = 'Chart' }) =
 
   const chartData = processData();
 
-  const options: ChartOptions = {
+  const options = {
     responsive: true,
     plugins: {
       legend: {
-        position: 'top',
+        position: 'top' as const,
       },
       title: {
         display: true,
