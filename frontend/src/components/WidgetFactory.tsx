@@ -5,9 +5,10 @@ interface WidgetFactoryProps {
   widget: WidgetSpec;
   value: any;
   onChange: (id: string, value: any) => void;
+  isDarkMode?: boolean;
 }
 
-const WidgetFactory: React.FC<WidgetFactoryProps> = ({ widget, value, onChange }) => {
+const WidgetFactory: React.FC<WidgetFactoryProps> = ({ widget, value, onChange, isDarkMode = false }) => {
   const { id, label, type, required, constraints } = widget;
   const displayValue = value !== undefined ? value : widget.default;
 
@@ -33,6 +34,15 @@ const WidgetFactory: React.FC<WidgetFactoryProps> = ({ widget, value, onChange }
     onChange(id, newValue);
   };
 
+  const inputStyle = {
+    backgroundColor: isDarkMode ? '#444' : '#fff',
+    color: isDarkMode ? '#fff' : '#000',
+    border: `1px solid ${isDarkMode ? '#666' : '#ccc'}`,
+    padding: '8px',
+    borderRadius: '4px',
+    width: '100%'
+  };
+
   const renderWidget = () => {
     switch (type) {
       case 'text':
@@ -43,6 +53,7 @@ const WidgetFactory: React.FC<WidgetFactoryProps> = ({ widget, value, onChange }
             value={displayValue || ''}
             onChange={handleChange}
             placeholder={`Enter ${label.toLowerCase()}`}
+            style={inputStyle}
           />
         );
         
@@ -55,6 +66,7 @@ const WidgetFactory: React.FC<WidgetFactoryProps> = ({ widget, value, onChange }
             onChange={handleChange}
             placeholder={`Enter ${label.toLowerCase()}`}
             step={constraints.integer ? 1 : 'any'}
+            style={inputStyle}
           />
         );
         
@@ -68,6 +80,10 @@ const WidgetFactory: React.FC<WidgetFactoryProps> = ({ widget, value, onChange }
             min={constraints.min || 0}
             max={constraints.max || 100}
             step={constraints.step || 1}
+            style={{
+              ...inputStyle,
+              padding: '0'
+            }}
           />
         );
         
@@ -78,6 +94,9 @@ const WidgetFactory: React.FC<WidgetFactoryProps> = ({ widget, value, onChange }
             id={id}
             checked={!!displayValue}
             onChange={handleChange}
+            style={{
+              accentColor: isDarkMode ? '#007bff' : 'auto'
+            }}
           />
         );
         
@@ -90,6 +109,10 @@ const WidgetFactory: React.FC<WidgetFactoryProps> = ({ widget, value, onChange }
             onChange={(e) => {
               const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
               onChange(id, selectedOptions);
+            }}
+            style={{
+              ...inputStyle,
+              height: '120px'
             }}
           >
             {constraints.options?.map((option: any) => (
@@ -108,6 +131,7 @@ const WidgetFactory: React.FC<WidgetFactoryProps> = ({ widget, value, onChange }
             id={id}
             value={displayValue || ''}
             onChange={handleChange}
+            style={inputStyle}
           >
             <option value="">Select an option</option>
             {constraints.options?.map((option: any) => (
@@ -135,24 +159,62 @@ const WidgetFactory: React.FC<WidgetFactoryProps> = ({ widget, value, onChange }
             }}
             rows={6}
             placeholder={`Enter JSON for ${label.toLowerCase()}`}
+            style={{
+              ...inputStyle,
+              fontFamily: 'monospace',
+              resize: 'vertical'
+            }}
           />
         );
         
       case 'file_upload':
         return (
-          <input
-            type="file"
-            id={id}
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) {
-                // For now, we'll just send the file name
-                // In a real app, you'd handle file uploads properly
-                onChange(id, file.name);
-              }
-            }}
-            accept={constraints.accept || '*/*'}
-          />
+          <div>
+            <input
+              type="file"
+              id={id}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  // Create a reader to handle the file
+                  const reader = new FileReader();
+                  reader.onloadstart = () => {
+                    // Show initial progress
+                    console.log('File upload started');
+                  };
+                  reader.onprogress = (event) => {
+                    if (event.lengthComputable) {
+                      const percentComplete = Math.round((event.loaded / event.total) * 100);
+                      console.log(`File upload progress: ${percentComplete}%`);
+                    }
+                  };
+                  reader.onload = () => {
+                    // For now, we'll send the file name and size
+                    // In a real app, you'd upload the file to the server
+                    const fileInfo = {
+                      name: file.name,
+                      size: file.size,
+                      type: file.type,
+                      lastModified: file.lastModified
+                    };
+                    onChange(id, fileInfo);
+                  };
+                  reader.onerror = () => {
+                    console.error('Error reading file');
+                  };
+                  // Read the file as ArrayBuffer (for binary files)
+                  reader.readAsArrayBuffer(file);
+                }
+              }}
+              accept={constraints.accept || '*/*'}
+              style={inputStyle}
+            />
+            {displayValue && (
+              <div style={{ marginTop: '8px', fontSize: '0.9em', color: isDarkMode ? '#aaa' : '#666' }}>
+                {typeof displayValue === 'string' ? displayValue : displayValue.name}
+              </div>
+            )}
+          </div>
         );
         
       case 'date':
@@ -162,6 +224,7 @@ const WidgetFactory: React.FC<WidgetFactoryProps> = ({ widget, value, onChange }
             id={id}
             value={displayValue || ''}
             onChange={handleChange}
+            style={inputStyle}
           />
         );
         
@@ -172,6 +235,7 @@ const WidgetFactory: React.FC<WidgetFactoryProps> = ({ widget, value, onChange }
             id={id}
             value={displayValue || ''}
             onChange={handleChange}
+            style={inputStyle}
           />
         );
         
@@ -182,6 +246,7 @@ const WidgetFactory: React.FC<WidgetFactoryProps> = ({ widget, value, onChange }
             id={id}
             value={displayValue || ''}
             onChange={handleChange}
+            style={inputStyle}
           />
         );
         
@@ -192,6 +257,10 @@ const WidgetFactory: React.FC<WidgetFactoryProps> = ({ widget, value, onChange }
             id={id}
             value={displayValue || '#000000'}
             onChange={handleChange}
+            style={{
+              ...inputStyle,
+              padding: '2px'
+            }}
           />
         );
         
@@ -203,28 +272,29 @@ const WidgetFactory: React.FC<WidgetFactoryProps> = ({ widget, value, onChange }
             value={displayValue || ''}
             onChange={handleChange}
             placeholder={`Enter ${label.toLowerCase()}`}
+            style={inputStyle}
           />
         );
     }
   };
 
   return (
-    <div className="form-group">
+    <div className="form-group" style={{ marginBottom: '16px' }}>
       {type !== 'boolean' ? (
-        <label htmlFor={id}>
+        <label htmlFor={id} style={{ display: 'block', marginBottom: '4px', color: isDarkMode ? '#ddd' : '#000' }}>
           {label} {required && <span style={{ color: 'red' }}>*</span>}
         </label>
       ) : (
         <div className="checkbox-group">
           {renderWidget()}
-          <label htmlFor={id}>
+          <label htmlFor={id} style={{ color: isDarkMode ? '#ddd' : '#000' }}>
             {label} {required && <span style={{ color: 'red' }}>*</span>}
           </label>
         </div>
       )}
       {type !== 'boolean' && renderWidget()}
       {type === 'slider' && (
-        <div style={{ marginTop: '8px', fontWeight: '500' }}>
+        <div style={{ marginTop: '8px', fontWeight: '500', color: isDarkMode ? '#ddd' : '#000' }}>
           {displayValue}
         </div>
       )}
